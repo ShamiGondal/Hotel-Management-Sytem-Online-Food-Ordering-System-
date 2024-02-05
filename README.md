@@ -59,4 +59,64 @@ Set the "Type" to "Transact-SQL Script (T-SQL)."
 In the "Command" box, enter the following T-SQL script:
 
 
-#
+## Backend Development 
+
+#   Phase 1 (Authentication)
+
+Completed login and Signup phase with jwt sign and bcrypt methods
+
+## Signup
+
+![alt text](image-3.png)
+
+## Login
+
+![alt text](image-2.png)
+
+
+## getCustomer 
+
+why this endpoint ?
+
+"This helps to fetch the record and data that is related to only particular user who is logged in his own account, not seeing others data , plus it helps us to get user deatils based on his id".
+
+1. This uses the middleware fetchCustomer , you can get this code at Server\middlewares
+2. Middleware verify token that is coming in the header and then pass it to next endpoint that is getCustomer
+3. Then getCustomer gets the uesr Record.
+
+## How to set the value in header feild while sending ID of user 
+
+Here is raw data just copy it and paste it in ThunderClient 
+
+1. Go to thunderClient 
+2. Make request to  url 
+    http://localhost:4000/api/getCustomer.
+3. open header option in thunder Client
+4. Click on raw and paste this code.
+
+    Accept: */*
+    User-Agent: Thunder Client (https://www.thunderclient.com)
+    Content-Type: application/json
+    authToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOjEwLCJpYXQiOjE3MDcxNTY4NzMsImV4cCI6MTcwNzE2MDQ3M30.9SzoyVLuXVbO6H8AnsmnjMYv-fL6kzxhnDZBHb5oxF4
+    ~Cookie: authToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySUQiOjEwLCJpYXQiOjE3MDcxNTY4NzMsImV4cCI6MTcwNzE2MDQ3M30.9SzoyVLuXVbO6H8AnsmnjMYv-fL6kzxhnDZBHb5oxF4
+
+5. Add this body by clicking on body option
+    {
+  "UserID": 10
+    }
+6. Then you will get this resutl if your connection will be working fine.    
+
+
+![alt text](image-4.png)
+
+
+## Missing part/Functionalities Coming along with Project
+
+
+Missing part mean that these are the anomalies, Problem that could not be solved till now.
+
+# Database Part
+
+1. There will be discounts for particular customer depending upon the credits that he gained form his no of orders, 
+2. I have set token in the cookies but in thunderClient I am sending in header therefore I am using req.header in       middleware but later on will update when will work on frontend code , because it will automatically fetch the cookies value as we are setting at the time of login.
+
