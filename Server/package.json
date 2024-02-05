@@ -1,0 +1,22 @@
+{
+  "name": "hms",
+  "version": "1.0.0",
+  "description": "This is the server side of HMS Indian Resturant",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Indian",
+    "House"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mssql": "^10.0.2",
+    "node": "^21.6.1",
+    "nodemon": "^3.0.3"
+  }
+}
