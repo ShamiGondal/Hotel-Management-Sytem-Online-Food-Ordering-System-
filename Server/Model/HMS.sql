@@ -84,7 +84,7 @@ CREATE TABLE Feedback (
 
 -- Create Payments Table
 CREATE TABLE Payments (
-    PaymentID INT PRIMARY KEY,
+    PaymentID INT IDENTITY(1,1) PRIMARY KEY,
     OrderID INT,
     CustomerID INT,
     Amount DECIMAL(10, 2) NOT NULL,
@@ -93,6 +93,7 @@ CREATE TABLE Payments (
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
+drop table payments
 -- Create Report Table with Auto-increment ID
 CREATE TABLE Report (
     ReportID INT IDENTITY(1,1) PRIMARY KEY,
@@ -102,6 +103,58 @@ CREATE TABLE Report (
     PlacedOrdersToday INT,
     RevenueToday DECIMAL(10, 2)
 );
+
+-- Create Complaints Table
+CREATE TABLE Complaints (
+    ComplaintID INT IDENTITY(1,1) PRIMARY KEY,
+    CustomerID INT,
+    ComplaintType VARCHAR(50) CHECK (ComplaintType IN ('Food', 'Website', 'Hotel')),
+    ComplaintText NVARCHAR(MAX),
+    ComplaintDate DATETIME,
+    IsResolved BIT DEFAULT 0, -- 0 for unresolved, 1 for resolved
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
+
+
+
+
+--Trigger for payment table
+
+
+CREATE TRIGGER InsertPaymentOnConfirmed
+ON Orders
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    -- Check if any rows are inserted
+    IF NOT EXISTS (SELECT * FROM inserted)
+    BEGIN
+        RETURN;
+    END
+
+    -- Check if the Status column or PaymentStatus column was updated
+    IF UPDATE(Status) OR UPDATE(PaymentStatus)
+    BEGIN
+        DECLARE @OrderID INT;
+        DECLARE @TotalAmount DECIMAL(10, 2);
+        DECLARE @CustomerID INT;
+
+        -- Retrieve the updated OrderID and TotalAmount where both status are confirmed
+        SELECT @OrderID = inserted.OrderID,
+               @TotalAmount = inserted.TotalAmount,
+               @CustomerID = inserted.CustomerID
+        FROM inserted
+        WHERE inserted.Status = 'Confirmed' AND inserted.PaymentStatus = 'Confirmed';
+
+        -- Insert payment details into the Payments table if both status are confirmed
+        IF @OrderID IS NOT NULL AND @TotalAmount IS NOT NULL AND @CustomerID IS NOT NULL
+        BEGIN
+            INSERT INTO Payments (OrderID, CustomerID, Amount, PaymentDate)
+            VALUES (@OrderID, @CustomerID, @TotalAmount, GETDATE());
+        END
+    END
+END;
+
 
 --Porcedures for insertions
 
@@ -127,6 +180,28 @@ BEGIN
     SET Status = @NewStatus
     WHERE OrderID = @OrderID;
 END;
+
+-- Procedure for updating complaint status
+CREATE PROCEDURE UpdateComplaintStatus
+    @ComplaintID INT,
+    @IsResolved BIT
+AS
+BEGIN
+    UPDATE Complaints
+    SET IsResolved = @IsResolved
+    WHERE ComplaintID = @ComplaintID;
+END;
+
+CREATE PROCEDURE UpdatePaymentStatus
+    @OrderID INT,
+    @NewPaymentStatus VARCHAR(50)
+AS
+BEGIN
+    UPDATE Orders
+    SET PaymentStatus = @NewPaymentStatus
+    WHERE OrderID = @OrderID;
+END;
+
 
 
 -- Procedure for inserting data into Customers table
@@ -243,6 +318,50 @@ BEGIN
     VALUES (@PaymentID, @OrderID, @CustomerID, @Amount, @PaymentDate);
 END;
 
+-- Procedure for inserting data into Complaints table
+CREATE PROCEDURE InsertComplaint
+    @CustomerID INT,
+    @ComplaintType VARCHAR(50),
+    @ComplaintText NVARCHAR(MAX)
+AS
+BEGIN
+    INSERT INTO Complaints (CustomerID, ComplaintType, ComplaintText, ComplaintDate)
+    VALUES (@CustomerID, @ComplaintType, @ComplaintText, GETDATE());
+END;
+
+
+-- Procedure for updating the Report table
+CREATE PROCEDURE UpdateReport
+AS
+BEGIN
+    INSERT INTO Report (Date, ConfirmedOrders, RejectedOrders, PlacedOrdersToday, RevenueToday)
+    SELECT
+        GETDATE() AS Date,
+        (SELECT COUNT(*) FROM Orders WHERE Status = 'Confirmed' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS ConfirmedOrders,
+        (SELECT COUNT(*) FROM Orders WHERE Status = 'Rejected' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS RejectedOrders,
+        (SELECT COUNT(*) FROM Orders WHERE CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS PlacedOrdersToday,
+        COALESCE((SELECT SUM(ISNULL(TotalAmount, 0)) FROM Orders WHERE Status = 'Confirmed' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())), 0) AS RevenueToday;
+END;
+
+/*
+Set up a SQL Server Job to execute the stored procedure:
+
+Open SQL Server Management Studio (SSMS).
+
+In the Object Explorer, navigate to SQL Server Agent -> Jobs.
+
+Right-click on Jobs and select "New Job..."
+
+Provide a name for the job.
+
+Go to the "Steps" page, click "New," and add a new step.
+
+Set the "Type" to "Transact-SQL Script (T-SQL)."
+
+In the "Command" box, enter the following T-SQL script:
+
+*/
+EXEC UpdateReport;
 
 -- Insert data into Customers table using the procedure
 EXEC InsertCustomer
@@ -276,12 +395,12 @@ EXEC InsertReservation
 
 -- Insert data into Orders table using the procedure
 EXEC InsertOrder
-    @OrderID = 1,
-    @CustomerID = 2,
+    @OrderID = 129,
+    @CustomerID = 14,
     @OrderDate = '2024-02-10',
-    @PaymentStatus = 'Pending',
+    @PaymentStatus = 'Confirmed',
     @TotalAmount = 50.00,
-    @Status = 'Pending';
+    @Status = 'Confirmed';
 
 -- Insert data into FoodItems table using the procedure
 EXEC InsertFoodItem
@@ -314,21 +433,18 @@ EXEC InsertPayment
     @Amount = 50.00,
     @PaymentDate = '2024-02-10 12:30:00';
 
--- Procedure for updating the Report table
-CREATE PROCEDURE UpdateReport
-AS
-BEGIN
-    INSERT INTO Report (Date, ConfirmedOrders, RejectedOrders, PlacedOrdersToday, RevenueToday)
-    SELECT
-        GETDATE() AS Date,
-        (SELECT COUNT(*) FROM Orders WHERE Status = 'Confirmed' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS ConfirmedOrders,
-        (SELECT COUNT(*) FROM Orders WHERE Status = 'Rejected' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS RejectedOrders,
-        (SELECT COUNT(*) FROM Orders WHERE CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())) AS PlacedOrdersToday,
-        COALESCE((SELECT SUM(ISNULL(TotalAmount, 0)) FROM Orders WHERE Status = 'Confirmed' AND CONVERT(DATE, OrderDate) = CONVERT(DATE, GETDATE())), 0) AS RevenueToday;
-END;
 
+-- Insert a complaint
+EXEC InsertComplaint
+    @CustomerID = 2,
+    @ComplaintType = 'Food',
+    @ComplaintText = 'The pizza was burnt and the pasta was undercooked.';
 
-EXEC UpdateReport;
+-- Update the status of a complaint (mark as resolved)
+EXEC UpdateComplaintStatus
+    @ComplaintID = 1,
+    @IsResolved = 1;
+
 
 
 
