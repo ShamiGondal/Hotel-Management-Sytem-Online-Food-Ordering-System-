@@ -130,65 +130,65 @@ Here are the endpoints
 
 ### End Points
 
-[text](http://localhost:4000/api/CreateUser)
+    http://localhost:4000/api/CreateUser
 
-[text](http://localhost:4000/api/login)
+    http://localhost:4000/api/login
 
-[text](http://localhost:4000/api/getCustomer)
+    http://localhost:4000/api/getCustomer
 
-[text](http://localhost:4000/api/addFoodItems)
+    http://localhost:4000/api/addFoodItems
 
-[text](http://localhost:4000/api/placeOrder)
+    http://localhost:4000/api/placeOrder
 
-[text](http://localhost:4000/api/createReservation)
+    http://localhost:4000/api/createReservation
 
-[text](http://localhost:4000/api/submitFeedback)
+    http://localhost:4000/api/submitFeedback
 
-[text](http://localhost:4000/api/addAddress)
+    http://localhost:4000/api/addAddress
 
-[text](http://localhost:4000/api/addAdmin)
+    http://localhost:4000/api/addAdmin
 
-[text](http://localhost:4000/api/adminLogin)
+    http://localhost:4000/api/adminLogin
 
-[text](http://localhost:4000/api/getCustomers)
+    http://localhost:4000/api/getCustomers
 
-[text](http://localhost:4000/api/getAdmins)
+    http://localhost:4000/api/getAdmins
 
-[text](http://localhost:4000/api/getAddresses)
+    http://localhost:4000/api/getAddresses
 
-[text](http://localhost:4000/api/getFoodItems)
+    http://localhost:4000/api/getFoodItems
 
-[text](http://localhost:4000/api/getOrders)
+    http://localhost:4000/api/getOrders
 
-[text](http://localhost:4000/api/getReservations)
+    http://localhost:4000/api/getReservations
 
-[text](http://localhost:4000/api/getFeedback)
+    http://localhost:4000/api/getFeedback
 
-[text](http://localhost:4000/api/my-reservations)
+    http://localhost:4000/api/my-reservations
 
-[text](http://localhost:4000/api/my-orders)
+    http://localhost:4000/api/my-orders
 
-[text](http://localhost:4000/api/addComplaints)
+    http://localhost:4000/api/addComplaints
 
-[text](http://localhost:4000/api/my-complaints)
+    http://localhost:4000/api/my-complaints
 
-[text](http://localhost:4000/api/reports)
+    http://localhost:4000/api/reports
 
-[text](http://localhost:4000/api/updateReservationStatus/56)
+    http://localhost:4000/api/updateReservationStatus/56
 
-[text](http://localhost:4000/api/updateOrderStatus/1)
+    http://localhost:4000/api/updateOrderStatus/1
 
-[text](http://localhost:4000/api/updateComplaintStatus/1)
+    http://localhost:4000/api/updateComplaintStatus/1
 
-[text](http://localhost:4000/api/getComplaints)
+    http://localhost:4000/api/getComplaints
 
-[text](http://localhost:4000/api/updatePaymentStatus/1)
+    http://localhost:4000/api/updatePaymentStatus/1
 
-[text](http://localhost:4000/api/getpayments)
+    http://localhost:4000/api/getpayments
 
-[text](http://localhost:4000/api/my-payments)
+    http://localhost:4000/api/my-payments
 
-## Eules 
+## Rules 
 
 1. For the end point in which the customer specific details are fetched , there you will have to add the token like I have added in this image , but do remember on thing that this token expires in 1 hours so you will have to generate new token by hitting the login endpoint with the proper credentails , Here are the credentials , After hitting enter you will get the token , add it in header while sending request 
 
