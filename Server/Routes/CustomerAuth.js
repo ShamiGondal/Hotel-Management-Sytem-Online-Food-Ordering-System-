@@ -2,9 +2,8 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const {body, validationResult} = require('express-validator');
-const { mssql, pool, sql } = require('../Connections/db');
-const fetchCustomer = require('../middlewares/fetchCustomer');
-const { restart } = require('nodemon');
+const { mssql, pool, sql } = require('../db/db');
+
 
 const Router = express.Router();
 const saltRounds = 10; // Number of salt rounds for bcrypt
@@ -140,38 +139,6 @@ Router.post('/Login', [
     }
 });
 
-
-Router.get('/getCustomer', fetchCustomer, async (req, res) => {
-    try {
-        const userID = req.user;
-
-        // Query to get customer details based on the userID
-        const query = `
-            SELECT Credits, Email
-            FROM Customers
-            WHERE CustomerID = @CustomerID;
-        `;
-
-        const result = await pool.request()
-            .input('CustomerID', mssql.Int, userID)
-            .query(query);
-
-        const customerDetails = result.recordset[0];
-
-        if (!customerDetails) {
-            return res.status(404).json({ error: 'Customer not found' });
-        }
-
-        res.status(200).json({
-            message: 'User Fetched Successfully',
-            credits: customerDetails.Credits,
-            email: customerDetails.Email,
-        });
-    } catch (error) {
-        console.error('Error retrieving customer details:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-});
 
 module.exports = Router;
 

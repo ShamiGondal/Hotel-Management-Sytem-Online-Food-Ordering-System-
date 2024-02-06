@@ -63,7 +63,11 @@ In the "Command" box, enter the following T-SQL script:
 
 #   Phase 1 (Authentication)
 
-Completed login and Signup phase with jwt sign and bcrypt methods
+Completed login and Signup fetchCustomer phase with (authorization Completed)
+    jwt sign 
+    bcrypt 
+    token 
+methodology
 
 ## Signup
 
@@ -110,6 +114,121 @@ Here is raw data just copy it and paste it in ThunderClient
 ![alt text](image-4.png)
 
 
+# Backend 
+
+All most the backend is completed
+
+Here are the endpoints 
+
+### Files
+
+1. Admin Auth ( for admin login Signup )
+2. Customer Auth ( for customer login signup)
+3. CustomerSpecific ( for details related to specific Cusotmer , using middleware FetchUser)
+4. AdminPurpose ( for fetching generic details plus reports plus speicific details )
+5. DBQuerries ( for updating record status & for filters )
+
+### End Points
+
+[text](http://localhost:4000/api/CreateUser)
+
+[text](http://localhost:4000/api/login)
+
+[text](http://localhost:4000/api/getCustomer)
+
+[text](http://localhost:4000/api/addFoodItems)
+
+[text](http://localhost:4000/api/placeOrder)
+
+[text](http://localhost:4000/api/createReservation)
+
+[text](http://localhost:4000/api/submitFeedback)
+
+[text](http://localhost:4000/api/addAddress)
+
+[text](http://localhost:4000/api/addAdmin)
+
+[text](http://localhost:4000/api/adminLogin)
+
+[text](http://localhost:4000/api/getCustomers)
+
+[text](http://localhost:4000/api/getAdmins)
+
+[text](http://localhost:4000/api/getAddresses)
+
+[text](http://localhost:4000/api/getFoodItems)
+
+[text](http://localhost:4000/api/getOrders)
+
+[text](http://localhost:4000/api/getReservations)
+
+[text](http://localhost:4000/api/getFeedback)
+
+[text](http://localhost:4000/api/my-reservations)
+
+[text](http://localhost:4000/api/my-orders)
+
+[text](http://localhost:4000/api/addComplaints)
+
+[text](http://localhost:4000/api/my-complaints)
+
+[text](http://localhost:4000/api/reports)
+
+[text](http://localhost:4000/api/updateReservationStatus/56)
+
+[text](http://localhost:4000/api/updateOrderStatus/1)
+
+[text](http://localhost:4000/api/updateComplaintStatus/1)
+
+[text](http://localhost:4000/api/getComplaints)
+
+[text](http://localhost:4000/api/updatePaymentStatus/1)
+
+[text](http://localhost:4000/api/getpayments)
+
+[text](http://localhost:4000/api/my-payments)
+
+## Eules 
+
+1. For the end point in which the customer specific details are fetched , there you will have to add the token like I have added in this image , but do remember on thing that this token expires in 1 hours so you will have to generate new token by hitting the login endpoint with the proper credentails , Here are the credentials , After hitting enter you will get the token , add it in header while sending request 
+
+    {
+    "email": "shagy@example.com",
+    "password": "kahna786"
+    }
+
+![alt text](image-5.png)
+
+
+2. For the simple get methods there is no need to add the anything in header just hit the endpoint.
+3. For the endpoint to post data you will have to add proper JSON body , I will suggest you to ask https://chat.openai.com/ to write json body for your endpoint , But still there will be primary and Foreign key issues that you will have to solve it by adding proper keys.
+
+### Sample code for PlaceOrder Endpont 
+
+    {
+        "orderId": 123456,
+        "orderItems": [
+            {
+                "orderItemID": 21,
+                "foodItemID": 1,
+                "quantity": 2,
+                "subtotal": 20.50
+            },
+            {
+                "orderItemID": 22,
+                "foodItemID": 2,
+                "quantity": 1,
+                "subtotal": 15.25
+            }
+        ],
+        "paymentStatus": "pending",
+        "status": "rejected"
+    }
+
+4. I have also attached the thuder-Client collection file.
+5. Most of backend is clear I have aslo added some querries endpoint , but these are not 100% final, Changes can be made depending upon the issues in frontEnd.
+
+
 ## Missing part/Functionalities Coming along with Project
 
 
@@ -120,3 +239,6 @@ Missing part mean that these are the anomalies, Problem that could not be solved
 1. There will be discounts for particular customer depending upon the credits that he gained form his no of orders, 
 2. I have set token in the cookies but in thunderClient I am sending in header therefore I am using req.header in       middleware but later on will update when will work on frontend code , because it will automatically fetch the cookies value as we are setting at the time of login.
 
+# Backend Part
+
+1. Not sure how we will be able to handle PK and FK form frontend.
