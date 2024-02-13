@@ -76,7 +76,7 @@ Router.post('/addAdmin', [
 
 
 // Endpoint for admin login
-Router.get('/adminLogin', async (req, res) => {
+Router.post('/adminLogin', async (req, res) => {
     const { userName, password } = req.body;
 
     try {
@@ -109,7 +109,7 @@ Router.get('/adminLogin', async (req, res) => {
         const token = generateToken(result.recordset[0].AdminID);
 
         // Set the token into cookies
-        res.cookie('authToken', token, { httpOnly: true });
+        res.cookie('token', token, { httpOnly: true });
 
         // Send the token back to the client
         res.status(200).json({ token });

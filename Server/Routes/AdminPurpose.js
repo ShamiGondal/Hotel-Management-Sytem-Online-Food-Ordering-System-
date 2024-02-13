@@ -1,6 +1,7 @@
 const express = require('express');
 const { mssql, pool, sql } = require('../db/db');
 const Router = express.Router();
+const fetchCustomer = require('../middlewares/fetchCustomer')
 
 
 //These all routes are for the admin portal becuase every user need his own specific details not the all and 
@@ -57,6 +58,23 @@ Router.get('/getCustomers', async (req, res) => {
     } catch (error) {
         console.error("Error fetching customers:", error);
         res.status(500).json({ error: "An error occurred while fetching customers." });
+    }
+});
+
+
+Router.get('/getCustomer', fetchCustomer, async (req, res) => {
+    const customerId = req.user;
+    try {
+        const result = await pool.request()
+            .input('customerId', mssql.Int, customerId)
+            .query('SELECT * FROM Customers WHERE CustomerID = @customerId');
+        if (result.recordset.length === 0) {
+            return res.status(404).json({ error: "Customer not found." });
+        }
+        res.status(200).json(result.recordset[0]);
+    } catch (error) {
+        console.error("Error fetching customer:", error);
+        res.status(500).json({ error: "An error occurred while fetching customer." });
     }
 });
 
@@ -131,7 +149,7 @@ Router.get('/getComplaints', async (req, res) => {
     try {
         const result = await pool.request().query('SELECT * FROM Complaints');
         const complaints = result.recordset;
-        
+
         res.status(200).json(complaints);
     } catch (error) {
         console.error('Error fetching complaints:', error);
@@ -162,7 +180,7 @@ Router.get('/reports', async (req, res) => {
         const query = `
             SELECT * FROM Report;
         `;
-        
+
         // Execute the query
         const result = await pool.request().query(query);
 

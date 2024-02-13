@@ -122,5 +122,176 @@ Router.put('/updatePaymentStatus/:orderID', async (req, res) => {
     }
 });
 
+// Endpoint to update payment status in the order
+Router.put('/updateOrderPaymentStatus/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const query = `
+            UPDATE Orders
+            SET PaymentStatus = 'Received'
+            WHERE OrderID = ${orderId};
+        `;
+        await pool.request().query(query);
+        res.status(200).json({ message:` Payment status updated for order ${orderId}` });
+    }catch (error) {
+        console.error("Error updating payment status in order:", error);
+        res.status(500).json({ error: "An error occurred while updating payment status in order." });
+    }
+});
+
+// Endpoint to fetch payment details by order ID
+Router.get('/getPaymentByOrderId/:orderId', async (req, res) => {
+    try {
+        const { orderId } = req.params;
+        const query = `SELECT * FROM Payments WHERE OrderID = ${orderId};`
+        const result = await pool.request().query(query);
+        const payments = result.recordset;
+        res.status(200).json({ payments });
+    } catch (error) {
+        console.error("Error fetching payments by order ID:", error);
+        res.status(500).json({ error: "An error occurred while fetching payments by order ID." });
+    }
+});
+
+// Endpoint to insert a new payment record
+Router.post('/insertPayment', async (req, res) => {
+    try {
+        const { OrderID, CustomerID, Amount, PaymentDate } = req.body;
+
+        // Validate input data
+        if (!OrderID || !CustomerID || !Amount || !PaymentDate) {
+            return res.status(400).json({ error: "Missing required fields." });
+        }
+
+        // Perform the insertion into the database
+        const query = `
+            INSERT INTO Payments (OrderID, CustomerID, Amount, PaymentDate)
+            VALUES (@OrderID, @CustomerID, @Amount, @PaymentDate);
+        `;
+        await pool.request()
+            .input('OrderID', mssql.Int, OrderID)
+            .input('CustomerID', mssql.Int, CustomerID)
+            .input('Amount', mssql.Decimal(10, 2), Amount)
+            .input('PaymentDate', mssql.DateTime, PaymentDate)
+            .query(query);
+
+        res.status(201).json({ message: "Payment record inserted successfully." });
+    } catch (error) {
+        console.error("Error inserting payment record:", error);
+        res.status(500).json({ error: "An error occurred while inserting payment record." });
+    }
+});
+
+// Endpoint to confirm or reject an order
+Router.put('/updateOrderStatus/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action } = req.body;
+        
+        // Update the order status based on the action
+        let status;
+        if (action === 'confirm') {
+            status = 'Confirmed';
+        } else if (action === 'reject') {
+            status = 'Rejected';
+        } else {
+            return res.status(400).json({ error: "Invalid action. Please provide 'confirm' or 'reject'." });
+        }
+
+        const query = `
+            UPDATE Orders
+            SET Status = @status
+            WHERE OrderID = @id;
+        `;
+        await pool.request()
+            .input('id', mssql.Int, id)
+            .input('status', mssql.NVarChar(50), status)
+            .query(query);
+
+        res.status(200).json({ message:` Order ${action}ed successfully.` });
+    } catch (error) {
+        console.error(`Error ${action}ing order:, error`);
+        res.status(500).json({ error: `An error occurred while ${action}ing order.` });
+    }
+});
+
+
+// Endpoint to update food items
+Router.put('/updateFoodItem/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { Name, Price, Category, AvailableQuantity, FoodItemDiscount } = req.body;
+        
+        // Check if all required fields are present
+        if (!Name || !Price || !Category || !AvailableQuantity || !FoodItemDiscount) {
+            return res.status(400).json({ error: "All fields are required." });
+        }
+
+        
+
+        const query = `
+            UPDATE FoodItems 
+            SET 
+                Name = @Name,
+                Price = @Price,
+                Category = @Category,
+                AvailableQuantity = @AvailableQuantity,
+                FoodItemDiscount = @FoodItemDiscount
+            WHERE 
+                FoodItemID = @id;
+        `;
+        await pool.request()
+            .input('Name', mssql.NVarChar(100), Name)
+            .input('Price', mssql.Decimal(10, 2), Price)
+            .input('Category', mssql.NVarChar(50), Category)
+            .input('AvailableQuantity', mssql.Int, AvailableQuantity)
+            .input('FoodItemDiscount', mssql.Decimal(5, 2), FoodItemDiscount)
+            .input('id', mssql.Int, id)
+            .query(query);
+
+        res.status(200).json({ message: "Food item updated successfully." });
+    } catch (error) {
+        console.error("Error updating food item:", error);
+        res.status(500).json({ error: "An error occurred while updating food item." });
+    }
+});
+
+// Endpoint to update reservation status by ID
+Router.put('/updateReservationStatus/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    try {
+        // Update the status of the reservation with the specified ID
+        await pool.request()
+            .input('id', mssql.Int, id)
+            .input('status', mssql.VarChar(50), status)
+            .query('UPDATE Reservations SET Status = @status WHERE ReservationID = @id');
+
+        // Send a success response
+        res.status(200).json({ message: "Reservation status updated successfully." });
+    } catch (error) {
+        console.error("Error updating reservation status:", error);
+        res.status(500).json({ error: "An error occurred while updating reservation status." });
+    }
+});
+
+//for specific customer feedback
+Router.get('/getFeedback/:customerID', async (req, res) => {
+    const { customerID } = req.params;
+
+    try {
+        // Fetch feedback for the specified customer
+        const result = await pool.request()
+            .input('CustomerID', customerID)
+            .query('SELECT * FROM Feedback WHERE CustomerID = @CustomerID');
+
+        // Return the feedback data
+        res.status(200).json(result.recordset);
+    } catch (error) {
+        console.error("Error fetching feedback:", error);
+        res.status(500).json({ error: "An error occurred while fetching feedback." });
+    }
+});
 
 module.exports = Router;

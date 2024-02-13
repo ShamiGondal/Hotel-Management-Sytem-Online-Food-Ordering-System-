@@ -5,6 +5,7 @@ const Admin = require('./Routes/AdminAuth');
 const AdminPurpose = require('./Routes/AdminPurpose');
 const SpecifiCustomer = require('./Routes/CustomerSpecific');
 const DBquerry = require('./Routes/DBQuerries');
+const cookieParser = require('cookie-parser');
 
 const app = express();  
 
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 4000;
 
 app.use(express.json());
 app.use(cors());
+app.use(cookieParser());
 
 //Customer login and Signup
 app.use('/api', CustomerAuth);

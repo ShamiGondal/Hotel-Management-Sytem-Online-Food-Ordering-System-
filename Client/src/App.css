@@ -1,42 +1,162 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.wrapper {
+  display: block;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* top layer */
+  z-index: 9999;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
+.overlay {
+  display: none;
+  position: fixed;
+  /* full screen */
+  width: 100vw;
+  height: 100vh;
+  /* transparent black */
+  background: rgba(0, 0, 0, 0.7);
+  /* middle layer, i.e. appears below the sidebar */
+  z-index: 998;
+  opacity: 0;
+  /* animate the transition */
+  transition: all 0.5s ease-in-out;
+}
+/* display .overlay when it has the .active class */
+.overlay.active {
+  display: block;
+  opacity: 1;
+}
+
+#dismiss {
+  width: 35px;
+  height: 35px;
+  position: absolute;
+  /* top right corner of the sidebar */
+  top: 10px;
+  right: 10px;
+}
+
+
+  #categoryCard:hover {
+    animation: pulse 1s ;
   }
-  to {
-    transform: rotate(360deg);
+  
+  @keyframes heartBeat {
+    0% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.1);
+    }
+    50% {
+      transform: scale(1);
+    }
+    75% {
+      transform: scale(1.1);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
+
+  .category-carousel {
+    position: relative;
+    overflow: hidden; /* Hide the vertical scrollbar */
   }
+  
+  .categories {
+    display: flex;
+    overflow-x: auto; /* Allow horizontal scrolling */
+    gap: 20px;
+    justify-content: center; /* Center category items */
+    padding: 10px 0; /* Add padding to the top and bottom */
+  }
+  .category-item {
+    position: relative;
+    border: 0px;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 16px;
+    overflow: hidden; 
+    margin-left: 20px;
+  }
+  
+
+  .category-item img {
+    max-width: 100%; 
+    max-height: 100%; 
+  }
+  
+  .category-item.active {
+    background-color: black;
+  }
+  
+  .text-center h5 {
+    margin-top: 6px;
+    margin-left: 30px; /* Margin to separate category name from circle */
+  }
+  
+  .text-center hr {
+    color: red;
+    height: 3px;
+    margin-left: 60px;
+    margin-bottom: 5px; /* Margin to separate line from category name */
+  }
+  
+  .navigation_left {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    display: flex;
+    align-items: center;
+  }
+  
+   .navigation_right {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .navigation button {
+    margin: 0 0px;
+  }
+  /* card imge height*/
+
+  .card img {
+    height: 150px;
+  }
+ 
+  /* CSS for add to bucket button */
+.btn-hover:hover {
+  color: white;
+  background-color: red;
 }
 
-.card {
-  padding: 2em;
+.food-items-container.dark-mode {
+  background-color: black; /* Change to your desired dark mode background color */
+  color: white; /* Change to your desired dark mode text color */
 }
 
-.read-the-docs {
-  color: #888;
+
+/* loader css*/
+
+.food-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px; /* Adjust height as needed */
+  font-size: 24px;
 }

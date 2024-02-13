@@ -3,8 +3,8 @@ const jwt = require('jsonwebtoken');
 const jwtKey = 'yourSecretKey';
 
 const fetchUser = (req, res, next) => {
-    const token = req.headers['authtoken'];
-
+    const token = req.headers['authorization'];
+    console.log(token)
     if (!token) {
         return res.status(401).json({ error: 'Authentication failed: Token not found' });
     }
@@ -17,5 +17,7 @@ const fetchUser = (req, res, next) => {
         return res.status(401).json({ error: 'Authentication failed: Invalid token' });
     }
 };
+
+
 
 module.exports = fetchUser;

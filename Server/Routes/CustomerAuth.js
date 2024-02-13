@@ -18,25 +18,25 @@ const generateToken = (userID) => {
 
 Router.post('/CreateUser',[
     //added validation using the validator
-    body("firstName", "Name shoudl be atleast 3 Characters").isLength({ min: 3 }),
-    body("password", "Password must be atleast 5 Characters").isLength({ min: 5 }),
+    body("firstName", "Name should be at least 3 Characters").isLength({ min: 3 }),
+    body("password", "Password must be at least 5 Characters").isLength({ min: 5 }),
     body("email", "Enter the correct Email").isEmail(),
   
   ], async (req, res) => {
-    let success = false
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return res.status(400).json({success, result: result.array() });
-    }
     try {
-        const { userID, firstName, lastName, email, password, credits } = req.body;
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { customerID, firstName, lastName, email, password, credits } = req.body;
 
         // Hash the password before storing it
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         // Call the stored procedure to insert a new customer
         const result = await pool.request()
-            .input('CustomerID', mssql.Int, userID)
+            .input('CustomerID', mssql.Int, customerID)
             .input('FirstName', mssql.VarChar(255), firstName)
             .input('LastName', mssql.VarChar(255), lastName)
             .input('Email', mssql.VarChar(255), email)
@@ -44,18 +44,13 @@ Router.post('/CreateUser',[
             .input('Credits', mssql.Int, credits)
             .execute('InsertCustomer');
 
-        // Respond with the newly created user data
-        if (!firstName || !lastName || !email || !password || !credits) {
-            return res.status(400).json({ error: 'Invalid request body. Please provide all required fields.' });
-        }
-
         // Generate JWT token and include it in the response
-        const token = generateToken(userID);
+        const token = generateToken(customerID);
 
-        res.status(201).json({
+        res.status(200).json({
             message: 'User created successfully',
             user: {
-                CustomerID: userID,
+                CustomerID: customerID,
                 FirstName: firstName,
                 LastName: lastName,
                 Email: email,
@@ -63,7 +58,6 @@ Router.post('/CreateUser',[
             },
             token,
         });
-        success = true
     } catch (err) {
         console.error('Error creating user:', err);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -115,7 +109,7 @@ Router.post('/Login', [
         const token = generateToken(user.CustomerID);
 
         // Set the token in cookies
-        res.cookie('authToken', token, {
+        res.cookie('token', token, {
             httpOnly: true,
             maxAge: 3600000,
             sameSite: 'strict',
