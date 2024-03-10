@@ -150,6 +150,11 @@
   color: white; /* Change to your desired dark mode text color */
 }
 
+.food-items-container.light-mode {
+  background-color: white; /* Change to your desired dark mode background color */
+  color: black; /* Change to your desired dark mode text color */
+}
+
 
 /* loader css*/
 
@@ -159,4 +164,107 @@
   align-items: center;
   height: 200px; /* Adjust height as needed */
   font-size: 24px;
+}
+
+/*code for home side bar*/
+
+.sidebar-open {
+  width: 250px;
+  transition: width 0.5s;
+}
+
+.sidebar-closed {
+  width: 0;
+  transition: width 0.5s;
+}
+
+.toggle-sidebar {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  z-index: 1000;
+}
+
+
+/*slidebar*/
+
+.sidebar {
+  height: 110vh;
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.sidebar.closed {
+  width: 60px;
+}
+
+.toggle-btn {
+  margin-bottom: 20px;
+
+}
+
+.list-group {
+  margin-top: 20px;
+}
+
+.list-group-item {
+  cursor: pointer;
+  background-color: #333 ;
+  border: none;
+  color: white;
+  margin-top: 5px;
+  
+}
+
+.list-group-item:hover{
+
+  background-color: #414040;
+}
+
+.content {
+  padding: 20px;
+}
+
+.selected-item {
+  background-color: #f0f0f0;
+  padding: 30px;
+}
+
+@media (min-width: 768px ) {
+
+  .sidebar {
+    
+    margin-top: 70px;
+   
+  }
+  
+}
+
+
+@media (max-width: 840px) {
+  .sidebar {
+    height: auto;
+    background-color: rgb(255, 255, 255);
+    overflow: visible;
+  }
+
+  .toggle-btn {
+    display: block;
+    margin: 20px auto; /* Center the button horizontally */
+    text-align: center;
+    color: #fff;
+  }
+
+  .content {
+    padding-top: 20px; /* Add padding to content to accommodate the sidebar */
+  }
+
+  .sidebar.closed {
+    height: 80px;
+    overflow: hidden;
+  }
 }

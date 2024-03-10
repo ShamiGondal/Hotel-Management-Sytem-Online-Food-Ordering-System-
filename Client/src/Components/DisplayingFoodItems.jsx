@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useDarkMode } from './Hooks/DarkModeContext';
 import Cart from './Cart';
 import FoodLoader from './FoodLoader';
+import { useCartContext } from './Hooks/useCart';
 
 
 function DisplayingFoodItems() {
@@ -16,6 +17,10 @@ function DisplayingFoodItems() {
     const error = useSelector(state => state.foodItems.error);
     const [isLoading, setIsLoading] = useState(true);
     const { isDarkMode } = useDarkMode();
+    const { addToCart } = useCartContext();
+
+
+
 
     const navigate = useNavigate();
     useEffect(() => {
@@ -51,19 +56,15 @@ function DisplayingFoodItems() {
     const [orderItems, setOrderItems] = useState([]);
 
     // Function to add item to cart
-    const addToCart = (foodItem) => {
-        const itemExists = orderItems.find(item => item.id === foodItem.id);
-        if (itemExists) {
-            const updatedOrderItems = orderItems.map(item =>
-                item.id === foodItem.id ? { ...item, quantity: item.quantity + 1 } : item
-            );
-            setOrderItems(updatedOrderItems);
-            <Cart orderItems={orderItems} />
-
-        } else {
-            setOrderItems([...orderItems, { ...foodItem, quantity: 1 }]);
-        }
+    const handleAddToCart = (foodItem) => {
+        console.log('Adding to cart:', foodItem);
+        addToCart(foodItem);
     };
+
+    const showDetails=(foodItem)=>{
+
+        navigate(`/FoodItemDetails/${foodItem.FoodItemID}`, { state: { item: foodItem } });
+    }
 
     if (isDarkMode) {
         document.body.style.backgroundColor = 'black';
@@ -146,27 +147,27 @@ function DisplayingFoodItems() {
                             </div>
                         </div>
                         <div className="container">
-                            <h3 className='mt-3 ms-3 mb-5'>Top Sellings</h3>
+                            <h3 className="mt-3 ms-3 mb-5 fw-medium fst-italic">Top Sellings</h3>
                             <div className="row row-cols-2 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
                                 {foodItems.map(foodItem => (
-                                    <div key={foodItem.FoodItemID} style={{ position: 'relative' }}>
-                                        <div className={`card rounded-2 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
-                                            <div className="position-absolute top-0 start-50 translate-middle p-2 mt-3 bg-danger border border-light rounded-circle" style={{ transform: 'translateX(-20%)' }}>
-                                                <span className="fs-6 text-white fw-bold">{foodItem.FoodItemDiscount}% off</span>
-                                            </div>
-                                            <img className="card-img-top" src={foodCeatogry} alt="Card image cap" />
-                                            <div className="card-body d-flex flex-column justify-content-center align-items-center">
-                                                <h5 className="card-title  fs-6">{foodItem.Name}</h5>
-                                                <p className={`card-text fw-bold   food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>Rs {foodItem.Price}</p>
-                                                <button className="btn btn-danger text-center btn-sm btn-hover" onClick={() => <Cart orderItems={foodItem} />}>
+                                    <button className="border-0 bg-transparent" onClick={() => showDetails(foodItem)} key={foodItem.FoodItemID} style={{ position: 'relative' }}>
+                                        <div className={`card rounded-2 bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
+                                            <img className="card-img-top rounded-top" src={foodCeatogry} alt="Card image cap" />
+                                            <div className="card-body d-flex flex-column justify-content-between">
+                                                <div>
+                                                    <h5 className="card-title fs-6">{foodItem.Name}</h5>
+                                                    <p className={`card-text fw-bold `}>Rs {foodItem.Price}</p>
+                                                </div>
+                                                <button className="btn btn-danger btn-sm btn-hover" onClick={() => handleAddToCart(foodItem)}>
                                                     Add to Bucket
                                                 </button>
                                             </div>
                                         </div>
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         </div>
+
                     </>
                 )}
 

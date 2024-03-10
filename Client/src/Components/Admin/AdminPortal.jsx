@@ -12,7 +12,7 @@ import Settings from '../Admin/AdminSettings';
 import Orders from '../Admin/CustomerOrders';
 import Reservations from '../Reservations';
 import Complaints from '../Admin/CustomerOrders';
-import Feedback from '../Admin/CustomerFeedbacks';
+// import Feedback from '../Admin/CustomerFeedbacks';
 import CustomerDetails from '../Admin/CustomerDetails';
 import Payments from '../Admin/CustomerPayments';
 import Fooditems from '../Admin/FoodItems';
@@ -149,7 +149,6 @@ function AdminPortal() {
                     {selectedMenuItem === 'Admin-Settings' && <Settings />}
                     {selectedMenuItem === 'FoodItems' && <Fooditems />}
                 </div>
-                <Outlet />
             </div>
             <Outlet />
         </>

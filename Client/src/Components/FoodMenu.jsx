@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchFoodItemsStart, fetchFoodItemsSuccess, fetchFoodItemsFailure } from '../Store/Slice/FoodItemSlice';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDarkMode } from './Hooks/DarkModeContext';
 import Cart from './Cart';
 import foodCeatogry from '../assets/hamburger-ingredients_98292-3567-removebg-preview.png'
+import { useCartContext } from './Hooks/useCart';
 
 
 function FoodMenu() {
@@ -13,6 +14,8 @@ function FoodMenu() {
     const loading = useSelector(state => state.foodItems.loading);
     const error = useSelector(state => state.foodItems.error);
     const { isDarkMode } = useDarkMode();
+    const { addToCart } = useCartContext();
+    const navigate = useNavigate();
 
     // Fetch food items on component mount
     useEffect(() => {
@@ -41,6 +44,11 @@ function FoodMenu() {
         const element = document.getElementById(category);
         element.scrollIntoView({ behavior: 'smooth' });
     };
+
+    const showDetails=(foodItem)=>{
+
+        navigate(`/FoodItemDetails/${foodItem.FoodItemID}`, { state: { item: foodItem } });
+    }
 
     if (isDarkMode) {
         document.body.style.backgroundColor = 'black';
@@ -72,7 +80,7 @@ function FoodMenu() {
                         <h2 className=" mb-3">{category}</h2>
                         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                             {foodItems.filter(item => item.Category === category).map((item, index) => (
-                                <div key={index} className="col">
+                                <button  onClick={()=>{showDetails(item)}}  key={index} className="col border-0 bg-transparent ">
                                 <div className={`card rounded-2 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
                                 <div className="position-absolute top-0 start-50 translate-middle p-2 mt-3 bg-danger border border-light rounded-circle" style={{ transform: 'translateX(-20%)' }}>
                                         <span className="fs-6 text-white fw-bold">{item.FoodItemDiscount}% off</span>
@@ -84,7 +92,7 @@ function FoodMenu() {
                                             <button className="btn btn-danger text-center btn-sm btn-hover" onClick={() => addToCart(item)}>Add to Cart</button>
                                         </div>
                                     </div>
-                                </div>
+                                </button>
                             ))}
                         </div>
                     </div>

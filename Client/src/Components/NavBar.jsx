@@ -16,19 +16,35 @@ import { Button } from "@mui/material";
 import { useDarkMode } from "./Hooks/DarkModeContext";
 import Cookies from "js-cookie";
 import PrivacyPolicy from "./PrivacyPolicy";
+import { useCartContext } from "./Hooks/useCart";
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+import { toast } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 
 const Navbar = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState(null);
     const [menuAnchorEl, setMenuAnchorEl] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(!!Cookies.get('token'));
+    const [isChecked, setIsChecked] = useState(false);
     const navigate = useNavigate();
+    const [Room, setRoom] = useState('');
+    const [Street, setStreet] = useState('');
+    const [PhoneNumber, setPhoneNumber] = useState('');
 
+    const { cartItems } = useCartContext();
 
+    const { isDarkMode, toggleDarkMode, isDrawerDarkMode, setIsDrawerDarkMode } = useDarkMode();
+
+    useEffect(() => {
+        setIsDrawerDarkMode(isDarkMode);
+    }, [isDarkMode, setIsDrawerDarkMode]);
 
     const toggleDrawer = () => {
         setDrawerOpen(!drawerOpen);
     };
+
 
     const handleMenuItemClick = (menuItem) => {
         setDrawerOpen(false); // Close the drawer after selecting an item
@@ -57,8 +73,6 @@ const Navbar = () => {
         navigate('/'); // Redirect to home page
     };
 
-    const [isChecked, setIsChecked] = useState(false);
-    const { isDarkMode, toggleDarkMode } = useDarkMode();
 
     const handleCheckboxChange = (event) => {
         setIsChecked(event.target.checked);
@@ -66,8 +80,158 @@ const Navbar = () => {
 
     }
 
+
+    if (isDrawerDarkMode) {
+        document.body.style.backgroundColor = 'black';
+    } else {
+        document.body.style.backgroundColor = 'white';
+    }
+
+    const [imageSrc, setImageSrc] = useState('');
+
+    useEffect(() => {
+        const fetchImage = async () => {
+            try {
+                const token = Cookies.get('token')
+                const response = await fetch('http://localhost:4000/api/my-Image', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `${token}`
+                    }
+                }); // Assuming user ID is 1
+                const blob = await response.blob();
+                const imageUrl = URL.createObjectURL(blob);
+                setImageSrc(imageUrl);
+            } catch (error) {
+                console.error('Error fetching image:', error);
+            }
+        };
+
+        fetchImage();
+    }, []);
+
+    const [position, setPosition] = useState(null);
+
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setPosition([position.coords.latitude, position.coords.longitude]);
+                },
+                (error) => {
+                    console.error('Error getting geolocation:', error);
+                }
+            );
+        } else {
+            console.error('Geolocation is not supported by this browser.');
+        }
+
+        // Check login status
+        const token = Cookies.get('token');
+        if (token) {
+            setIsLoggedIn(true);
+        } else {
+            setIsLoggedIn(false);
+        }
+    }, []);
+
+
+    useEffect(() => {
+        if (position) {
+            const map = L.map('map').setView(position, 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            L.marker(position).addTo(map)
+                .bindPopup('You are here')
+                .openPopup();
+
+            // Resize the map to fit the modal
+            setTimeout(() => map.invalidateSize(), 100);
+        }
+    }, [position]);
+
+    const localhost = `http://localhost:4000`
+
+    function generateRandomId() {
+        return Math.floor(1000 + Math.random() * 9000);
+    }
+
+    const handleConfirmAddress = async () => {
+        if (Cookies.get('token') && position) {
+            try {
+                const [latitude, longitude] = position;
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
+                const data = await response.json();
+
+                let formattedAddress = '';
+
+                if (data.address) {
+                    const {city, state, postcode, country } = data.address;
+                    const street = Street
+                    const road = Room
+                    if (road) {
+                        formattedAddress += road + ', ';
+                    }
+                    if (road) {
+                        formattedAddress += street + ', ';
+                    }
+                    if (city) {
+                        formattedAddress += city + ', ';
+                    }
+                    if (state) {
+                        formattedAddress += state + ', ';
+                    }
+                    if (postcode) {
+                        formattedAddress += postcode + ', ';
+                    }
+                    if (country) {
+                        formattedAddress += country;
+                    }
+                }
+
+                if (!formattedAddress) {
+                    throw new Error('Failed to get address details');
+                }
+
+                const token = Cookies.get('token');
+                const addAddressResponse = await fetch(`${localhost}/api/addAddress`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${token}`
+                    },
+                    body: JSON.stringify({
+                        addressID: generateRandomId(),
+                        address: formattedAddress,
+                        phoneNumber: PhoneNumber,
+
+                    })
+                });
+
+                if (addAddressResponse.ok) {
+                    toast.success('Address confirmed successfully!');
+                    navigate('/FoodMenu')
+                } else {
+                    throw new Error('Failed to confirm address');
+                }
+            } catch (error) {
+                console.error('Error confirming address:', error);
+                toast.error('Failed to confirm address. Please try again.');
+            }
+        } else {
+            toast.error('Please login to confirm address.');
+            navigate('/Login')
+        }
+    };
+
+
+
     return (
         <>
+            <ToastContainer />
             <nav className={`navbar navbar-expand-lg  fixed-top bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                 <div className={`container-fluid `}>
                     <div className="navbar-brand d-flex gap-4">
@@ -75,17 +239,42 @@ const Navbar = () => {
                             <i className="fa-solid fa-bars fw-bolder text-danger fs-4 "></i>
                         </Button>
                         <Link to="/"><i className="fa-solid fa-utensils fw-3 text-danger"></i></Link>
-                        <Link to="/" className="btn btn-danger d-none d-md-inline">Delivery</Link>
+                        <Link to="/" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" className="btn btn-danger d-none d-md-inline">Delivery</Link>
                         <Link to="/" className="btn btn-danger d-none d-md-inline">Pickup</Link>
                     </div>
+
                     <div className="d-flex gap-3 me-md-5 " role="search">
-                        <button onClick={() => navigate('/cart')} className="btn btn-outline-warning me-5  "><i className="fa-solid fa-cart-shopping "></i></button>
+                        <div style={{ position: 'relative' }}>
+                            <button onClick={() => navigate('/cart')} className="btn btn-outline-warning" style={{ marginRight: '50px' }} >
+                                <i className="fa-solid fa-cart-shopping"></i>
+                            </button>
+                            <span className={`badge food-items-container ${isDarkMode ? 'dark-mode' : 'light-mode'}  `} style={{ position: 'absolute', top: -5, right: -10, marginRight: '90px' }}>
+                                {cartItems.length}
+                            </span>
+                        </div>
                         {Cookies.get('token') ? (
-                            <div style={{ position: 'absolute', bottom: 55, left: 0, width: '100%',  }}>
+                            <div className="d-none d-md-inline " style={{ position: 'absolute', bottom: 55, left: 0, width: '100%', }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
-                                    <Button onClick={handleMenuOpen} style={{ cursor: 'pointer', marginRight: '8px', marginBottom: -60, position: 'absolute', right: 10, borderRadius: 50, border: `1px solid #e0e0e0` }}>
-                                        <img src={robotPng} alt="Footer Logo" style={{ height: '39px', width: '30px' }} />
+                                    <Button
+                                        onClick={handleMenuOpen}
+                                        style={{
+                                            cursor: 'pointer',
+                                            marginRight: '8px',
+                                            marginBottom: -60,
+                                            position: 'absolute',
+                                            right: 10,
+                                            padding: 0, // Remove default padding
+                                            width: '40px', // Set width to make it round
+                                            height: '40px', // Set height to make it round
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                        }}
+                                    >
+                                        <img src={imageSrc} alt="Footer Logo" style={{ height: '30px', width: '30px', marginRight: '20px', borderRadius: '50%' }} />
+                                        {/* <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', marginRight: '24px' }}>My Account▼</span> */}
                                     </Button>
+
                                     {/* Dropdown menu */}
                                     <Menu
                                         anchorEl={menuAnchorEl}
@@ -113,6 +302,32 @@ const Navbar = () => {
                     </div>
                 </div>
             </nav>
+            {/* modal for the delivery*/}
+            <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div className="modal-dialog">
+                    <div className={`modal-content bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
+                        <div className="modal-header">
+                            <h1 className="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div className="modal-body">
+                            <div id="map" style={{ height: '400px', width: '100%' }}></div>
+                            <div className="d-flex flex-column">
+                                <label htmlFor="room">Room/Floor:</label>
+                                <input type="text" value={Room} onChange={(e) => setRoom(e.target.value)} />
+                                <label htmlFor="road">Street:</label>
+                                <input type="text" value={Street} onChange={(e) => setStreet(e.target.value)} />
+                                <label htmlFor="number">Phone Number:</label>
+                                <input type="tel" value={PhoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" className="btn btn-primary" onClick={handleConfirmAddress}>Confirm Address</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <ul className={`nav justify-content-center d-md-none mt-5 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                 <li className="nav-item mt-3 mb-2">
                     <button className=" btn btn-danger btn-sm rounded-2 " aria-current="page">Delivery</button>
@@ -132,38 +347,77 @@ const Navbar = () => {
                         '& .MuiDrawer-paper': {
                             overflowX: 'hidden',
                             overflowY: 'hidden',
+                            backgroundColor: isDrawerDarkMode ? '#181b1e' : 'white',
+                            color: isDrawerDarkMode ? 'white' : 'black',
+                            boxShadow: '5px 5px 15px rgba(0,0,0,.4)',
                         },
                     }}
                 >
                     <div style={{ width: 250, marginTop: 40 }}>
-                        <div className="d-flex mt-3">
+                        <div className={`d-flex mt-3 text-${isDarkMode ? 'light' : 'black'} `}>
                             <IconButton
                                 className="mt-2"
                                 edge="end"
                                 onClick={toggleDrawer}
-                                sx={{ position: 'absolute', top: 0, right: 12 }}
+                                sx={{ position: 'absolute', top: 0, right: 12, color: isDarkMode ? 'light' : 'black' }}
                             >
                                 <CloseIcon />
                             </IconButton>
-                            {Cookies.get('token') ? (
-                                <IconButton
-                                    className="border-0 rounded-2 bg-danger btn-sm mt-2 text-white ms-1 fs-6 "
-                                    edge="start"
-                                    sx={{ position: 'absolute', top: 0, left: 10 }}
-                                    onClick={handleSignOut}
-                                >
-                                    <MenuItem className="fs-6">Logout</MenuItem>
-                                </IconButton>
-                            ) : (
-                                <IconButton
-                                    className="border-0 rounded-2 bg-danger btn-sm mt-2 text-white ms-1 fs-6 "
-                                    edge="start"
-                                    sx={{ position: 'absolute', top: 0, left: 10 }}
-                                    onClick={() => handleMenuItemClick('Login')}
-                                >
-                                    <MenuItem className="fs-6">Login</MenuItem>
-                                </IconButton>
-                            )}
+                            {Cookies.get('token') ?
+                                (
+                                    <div className=" d-md-none " style={{ position: 'absolute', bottom: 55, right: 160, width: '100%', }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
+                                            <Button
+                                                onClick={handleMenuOpen}
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    marginRight: '8px',
+                                                    marginBottom: -60,
+                                                    position: 'absolute',
+                                                    right: 10,
+                                                    borderRadius: '50%',
+                                                    padding: 0, // Remove default padding
+                                                    width: '40px', // Set width to make it round
+                                                    height: '40px', // Set height to make it round
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                }}
+                                            >
+                                                <img src={robotPng} alt="Footer Logo" style={{ height: '30px', width: '30px', marginLeft: '60px', borderRadius: '50%' }} />
+                                                <span style={{ marginLeft: '8px', fontSize: '10px' }}>My Account ▼</span>
+                                            </Button>
+
+
+                                            <Menu
+                                                anchorEl={menuAnchorEl}
+                                                open={Boolean(menuAnchorEl)}
+                                                onClose={handleMenuClose}
+                                                PaperProps={{
+                                                    style: {
+                                                        width: '200px', // Adjust the width as needed
+                                                        marginTop: '-10px', // Move the menu up
+                                                    },
+                                                }}
+                                            >
+                                                <MenuItem onClick={() => handleMenuItemClick('My-Home')}>DashBoard</MenuItem>
+                                                <hr className='bg-dark' />
+                                                <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
+                                            </Menu>
+
+                                        </div>
+                                    </div>
+
+                                ) : (
+                                    <IconButton
+                                        className="border-0 rounded-2 bg-danger btn-sm mt-2 text-white ms-1 fs-6 "
+                                        edge="start"
+                                        sx={{ position: 'absolute', top: 0, left: 10 }}
+                                        onClick={() => handleMenuItemClick('Login')}
+                                    >
+                                        <MenuItem className="fs-6">Login</MenuItem>
+                                    </IconButton>
+                                )}
 
 
                             <IconButton
@@ -172,6 +426,7 @@ const Navbar = () => {
                                 sx={{ position: 'relative', left: 14 }}
                             >
                                 <FormControlLabel
+                                    className={`text-${isDarkMode ? 'light' : 'black'}`}
                                     control={<Checkbox checked={isChecked} onChange={handleCheckboxChange} />}
                                     label={isChecked ? "Night" : "Day"}
                                 />
