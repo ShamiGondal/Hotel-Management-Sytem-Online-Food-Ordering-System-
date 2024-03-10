@@ -32,9 +32,11 @@ const Navbar = () => {
     const [Room, setRoom] = useState('');
     const [Street, setStreet] = useState('');
     const [PhoneNumber, setPhoneNumber] = useState('');
-
+    const [userDetails, setUserDetails] = useState({});
+    const [addresses, setAddresses] = useState([]);
+    const [position, setPosition] = useState(null);
+    const localhost = `http://localhost:4000`
     const { cartItems } = useCartContext();
-
     const { isDarkMode, toggleDarkMode, isDrawerDarkMode, setIsDrawerDarkMode } = useDarkMode();
 
     useEffect(() => {
@@ -58,14 +60,6 @@ const Navbar = () => {
         }
     };
 
-    const handleMenuOpen = (event) => {
-        setMenuAnchorEl(event.currentTarget);
-    };
-
-    const handleMenuClose = () => {
-        setMenuAnchorEl(null);
-    };
-
 
     const handleSignOut = () => {
         Cookies.remove('token'); // Remove token from cookies
@@ -79,7 +73,15 @@ const Navbar = () => {
         toggleDarkMode();
 
     }
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+    const handleMenuOpens = () => {
+        setIsMenuOpen(true);
+    };
+
+    const handleMenuCloses = () => {
+        setIsMenuOpen(false);
+    };
 
     if (isDrawerDarkMode) {
         document.body.style.backgroundColor = 'black';
@@ -110,7 +112,24 @@ const Navbar = () => {
         fetchImage();
     }, []);
 
-    const [position, setPosition] = useState(null);
+    const token = Cookies.get('token');
+    useEffect(() => {
+        if (token) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `${token}`
+            };
+
+            fetch(`${localhost}/api/getCustomer`, { headers })
+                .then(response => response.json())
+                .then(data => setUserDetails(data))
+                .catch(error => console.error('Error fetching Customer:', error));
+
+        }
+    }, [token, setUserDetails]);
+
+
+
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -153,7 +172,6 @@ const Navbar = () => {
         }
     }, [position]);
 
-    const localhost = `http://localhost:4000`
 
     function generateRandomId() {
         return Math.floor(1000 + Math.random() * 9000);
@@ -169,7 +187,7 @@ const Navbar = () => {
                 let formattedAddress = '';
 
                 if (data.address) {
-                    const {city, state, postcode, country } = data.address;
+                    const { city, state, postcode, country } = data.address;
                     const street = Street
                     const road = Room
                     if (road) {
@@ -227,6 +245,11 @@ const Navbar = () => {
         }
     };
 
+    
+
+
+
+ 
 
 
     return (
@@ -239,71 +262,88 @@ const Navbar = () => {
                             <i className="fa-solid fa-bars fw-bolder text-danger fs-4 "></i>
                         </Button>
                         <Link to="/"><i className="fa-solid fa-utensils fw-3 text-danger"></i></Link>
-                        <Link to="/" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" className="btn btn-danger d-none d-md-inline">Delivery</Link>
+                        <Link to="/" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" className="btn btn-danger d-none d-md-inline"  >Delivery</Link>
                         <Link to="/" className="btn btn-danger d-none d-md-inline">Pickup</Link>
                     </div>
 
-                    <div className="d-flex gap-3 me-md-5 " role="search">
-                        <div style={{ position: 'relative' }}>
-                            <button onClick={() => navigate('/cart')} className="btn btn-outline-warning" style={{ marginRight: '50px' }} >
-                                <i className="fa-solid fa-cart-shopping"></i>
-                            </button>
-                            <span className={`badge food-items-container ${isDarkMode ? 'dark-mode' : 'light-mode'}  `} style={{ position: 'absolute', top: -5, right: -10, marginRight: '90px' }}>
-                                {cartItems.length}
-                            </span>
-                        </div>
+                    <div className="d-flex gap-3 me-md-5" role="search">
                         {Cookies.get('token') ? (
-                            <div className="d-none d-md-inline " style={{ position: 'absolute', bottom: 55, left: 0, width: '100%', }}>
+                            <div className="d-none d-md-inline" style={{ position: 'absolute', bottom: 55, left: 0, width: '100%' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
-                                    <Button
-                                        onClick={handleMenuOpen}
+                                    <button
+                                        onMouseEnter={handleMenuOpens}
+                                        onMouseLeave={handleMenuCloses}
                                         style={{
                                             cursor: 'pointer',
-                                            marginRight: '8px',
                                             marginBottom: -60,
                                             position: 'absolute',
                                             right: 10,
-                                            padding: 0, // Remove default padding
-                                            width: '40px', // Set width to make it round
-                                            height: '40px', // Set height to make it round
+                                            padding: 0,
+                                            width: '40px',
+                                            height: '40px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
+                                            marginRight: "180px",
+                                            border: 'none',
+                                            background: "transparent"
                                         }}
                                     >
                                         <img src={imageSrc} alt="Footer Logo" style={{ height: '30px', width: '30px', marginRight: '20px', borderRadius: '50%' }} />
-                                        {/* <span style={{ fontSize: '10px', display: 'flex', alignItems: 'center', marginRight: '24px' }}>My Account▼</span> */}
-                                    </Button>
+                                        <div className="d-flex text-dark fw-medium" style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                            Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName.split(' ')[0]}  `}
+                                            <i className="fa-solid fa-caret-down text-danger ms-2 fs-6 "></i>
+                                        </div>
+                                        {/* Custom Menu */}
+                                        <ul
+                                            className="custom-menu"
+                                            style={{
+                                                position: 'absolute',
+                                                top: '100%',
+                                                left: 'calc(100% - 100px - 70px)', // Adjust the left position to create space from the right side
+                                                zIndex: 999,
+                                                width: '250px', // Set the width to your desired value
+                                                display: isMenuOpen ? 'block' : 'none',
+                                                flexDirection: 'column',
+                                                padding: '0',
+                                                margin: '0',
+                                                marginTop: '-9px',
+                                                listStyleType: 'none',
+                                                backgroundColor: '#fff',
+                                                boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.1)',
+                                                transition: 'all 0.3s ease-in-out',
+                                            }}
+                                        >
 
-                                    {/* Dropdown menu */}
-                                    <Menu
-                                        anchorEl={menuAnchorEl}
-                                        open={Boolean(menuAnchorEl)}
-                                        onClose={handleMenuClose}
-                                        PaperProps={{
-                                            style: {
-                                                width: '200px', // Adjust the width as needed
-                                                marginTop: '-10px', // Move the menu up
-                                            },
-                                        }}
-                                    >
-                                        <MenuItem onClick={() => handleMenuItemClick('My-Home')}>DashBoard</MenuItem>
-                                        <hr className='bg-dark' />
-                                        <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
-                                    </Menu>
+                                            <li style={{ padding: '8px 16px', cursor: 'pointer' }} onClick={() => handleMenuItemClick('My-Home')}><i className="fa-solid fa-gauge text-danger fs-5"></i> Dashboard</li>
+                                            <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} onClick={handleSignOut}><i className="fa fa-sign-out text-danger" aria-hidden="true"></i> Sign Out</li>
+                                            <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }}><i className="fa-solid fa-circle-info text-danger"></i> Help Center</li>
+                                        </ul>
 
+                                    </button>
                                 </div>
                             </div>
                         ) : (
-                            <button className="btn btn-danger rounded-2 d-none d-md-inline ">
-                                <Link to='/Login' className="  text-decoration-none text-white " >Login</Link>
+                            <button className="btn btn-danger rounded-2 d-none d-md-inline">
+                                <Link to='/Login' className="text-decoration-none text-white">Login</Link>
                             </button>
                         )}
+                        <div style={{ position: 'relative' }}>
+                            <button onClick={() => navigate('/cart')} className="btn btn-outline-warning" style={{ marginRight: '0px' }}>
+                                <i className="fa-solid fa-cart-shopping"></i>
+                            </button>
+                            <span className={`badge food-items-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`} style={{ position: 'absolute', top: -5, right: -10, marginRight: '0px' }}>
+                                {cartItems.length}
+                            </span>
+                        </div>
                     </div>
+
+
+
                 </div>
             </nav>
             {/* modal for the delivery*/}
-            <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+             <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
                     <div className={`modal-content bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                         <div className="modal-header">
@@ -330,7 +370,7 @@ const Navbar = () => {
             </div>
             <ul className={`nav justify-content-center d-md-none mt-5 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                 <li className="nav-item mt-3 mb-2">
-                    <button className=" btn btn-danger btn-sm rounded-2 " aria-current="page">Delivery</button>
+                    <button className=" btn btn-danger btn-sm rounded-2 " type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">Delivery</button>
                 </li>
                 <li className="nav-item mt-3 mb-2 ms-3">
                     <button className="btn btn-danger btn-sm rounded-2">Pickup</button>
@@ -367,14 +407,16 @@ const Navbar = () => {
                                 (
                                     <div className=" d-md-none " style={{ position: 'absolute', bottom: 55, right: 160, width: '100%', }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
-                                            <Button
-                                                onClick={handleMenuOpen}
+                                            <button
+                                                onMouseEnter={handleMenuOpens}
+                                                onMouseLeave={handleMenuCloses}
+                                                className="border-0 bg-transparent"
                                                 style={{
                                                     cursor: 'pointer',
-                                                    marginRight: '8px',
-                                                    marginBottom: -60,
+                                                    marginRight: '-19px',
+                                                    marginBottom: 40,
                                                     position: 'absolute',
-                                                    right: 10,
+                                                    right: 0,
                                                     borderRadius: '50%',
                                                     padding: 0, // Remove default padding
                                                     width: '40px', // Set width to make it round
@@ -384,26 +426,36 @@ const Navbar = () => {
                                                     justifyContent: 'center',
                                                 }}
                                             >
-                                                <img src={robotPng} alt="Footer Logo" style={{ height: '30px', width: '30px', marginLeft: '60px', borderRadius: '50%' }} />
-                                                <span style={{ marginLeft: '8px', fontSize: '10px' }}>My Account ▼</span>
-                                            </Button>
+                                                <img src={imageSrc} alt="Footer Logo" style={{ height: '60px', width: '60px', marginRight: '20px', borderRadius: '50%' }} />
+                                                <div className="d-flex text-dark fw-medium" style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                                    Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName.split(' ')[0]}  `}
+                                                    <i className="fa-solid fa-caret-up text-danger ms-2 fs-6 "></i>
+                                                </div>
+                                            </button>
 
-
-                                            <Menu
-                                                anchorEl={menuAnchorEl}
-                                                open={Boolean(menuAnchorEl)}
-                                                onClose={handleMenuClose}
-                                                PaperProps={{
-                                                    style: {
-                                                        width: '200px', // Adjust the width as needed
-                                                        marginTop: '-10px', // Move the menu up
-                                                    },
+                                            <ul
+                                                className="custom-menu"
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 'calc(50% - 200px)', // Adjust the calculation based on the desired distance from the top
+                                                    right: 'calc(50% - 400px)',
+                                                    zIndex: 999,
+                                                    width: '250px', // Set the width to your desired value
+                                                    display: isMenuOpen ? 'block' : 'none',
+                                                    flexDirection: 'column',
+                                                    padding: '0',
+                                                    margin: '0',
+                                                    listStyleType: 'none',
+                                                    backgroundColor: '#fff',
+                                                    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.1)',
+                                                    transition: 'all 0.3s ease-in-out',
                                                 }}
                                             >
-                                                <MenuItem onClick={() => handleMenuItemClick('My-Home')}>DashBoard</MenuItem>
-                                                <hr className='bg-dark' />
-                                                <MenuItem onClick={handleSignOut}>Sign Out</MenuItem>
-                                            </Menu>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer' }} onClick={() => handleMenuItemClick('My-Home')}><i className="fa-solid fa-gauge text-danger fs-5"></i> Dashboard</li>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} onClick={handleSignOut}><i className="fa fa-sign-out text-danger" aria-hidden="true"></i> Sign Out</li>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }}><i className="fa-solid fa-circle-info text-danger"></i> Help Center</li>
+                                            </ul>
+
 
                                         </div>
                                     </div>
