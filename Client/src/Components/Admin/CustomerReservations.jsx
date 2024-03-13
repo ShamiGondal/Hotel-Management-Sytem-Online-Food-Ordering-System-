@@ -4,11 +4,13 @@ import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
+import Alert from 'react-bootstrap/Alert';
 
 function CustomerReservations() {
   const [reservations, setReservations] = useState([]);
   const [filteredReservations, setFilteredReservations] = useState([]);
   const [filter, setFilter] = useState('all'); // 'all', 'confirmed', 'rejected', 'pending'
+  const [confirmationMsg, setConfirmationMsg] = useState('');
 
   useEffect(() => {
     // Fetch reservations from the API
@@ -33,8 +35,8 @@ function CustomerReservations() {
     setFilter(status);
   };
 
-   // Handle button click to confirm or reject reservation
-   const handleConfirmReject = (reservationID, status) => {
+  // Handle button click to confirm or reject reservation
+  const handleConfirmReject = (reservationID, status) => {
     // Perform API call to update reservation status
     fetch(`http://localhost:4000/api/updateReservationStatus/${reservationID}`, {
       method: 'PUT',
@@ -44,19 +46,23 @@ function CustomerReservations() {
       body: JSON.stringify({ status })
     })
     .then(response => {
-      if (response.ok) {
-        // Update the reservation status locally
-        const updatedReservations = reservations.map(reservation => {
-          if (reservation.ReservationID === reservationID) {
-            return { ...reservation, Status: status };
-          }
-          return reservation;
-        });
-        setReservations(updatedReservations);
-        setFilteredReservations(updatedReservations);
-      } else {
+      if (!response.ok) {
         throw new Error('Failed to update reservation status');
       }
+      // Update the reservation status locally
+      const updatedReservations = reservations.map(reservation => {
+        if (reservation.ReservationID === reservationID) {
+          return { ...reservation, Status: status };
+        }
+        return reservation;
+      });
+      setReservations(updatedReservations);
+      setFilteredReservations(updatedReservations);
+      setConfirmationMsg(`Reservation ${status === 'Confirmed' ? 'confirmed' : 'rejected'} successfully.`);
+      // Clear confirmation message after 3 seconds
+      setTimeout(() => {
+        setConfirmationMsg('');
+      }, 3000);
     })
     .catch(error => console.error('Error updating reservation status:', error));
   };
@@ -67,6 +73,7 @@ function CustomerReservations() {
   return (
     <Container>
       <h1 className="my-4">Reservations</h1>
+      {confirmationMsg && <Alert variant="success">{confirmationMsg}</Alert>}
       <div className="category-buttons mb-4">
         <Button variant={filter === 'all' ? 'primary' : 'outline-primary'} onClick={() => filterReservations('all')}>All</Button>{' '}
         <Button variant={filter === 'confirmed' ? 'primary' : 'outline-primary'} onClick={() => filterReservations('confirmed')}>Confirmed</Button>{' '}
@@ -103,9 +110,7 @@ function CustomerReservations() {
                     );
                   }
                 })()}
-                
               </Card.Body>
-              
             </Card>
           </Col>
         ))}

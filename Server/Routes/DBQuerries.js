@@ -3,33 +3,53 @@ const { mssql, pool, sql } = require('../db/db');
 const Router = express.Router();
 
 // Endpoint to update reservation status
-Router.put('/updateReservationStatus/:reservationID', async (req, res) => {
-    const { reservationID } = req.params;
-    const { newStatus } = req.body;
+// Router.put('/updateReservationStatus/:reservationID', async (req, res) => {
+//     const { reservationID } = req.params;
+//     const { newStatus } = req.body;
 
-    // Check if reservationID is provided
-    if (!reservationID) {
-        return res.status(400).json({ error: "Reservation ID is required." });
-    }
+//     // Check if reservationID is provided
+//     if (!reservationID) {
+//         return res.status(400).json({ error: "Reservation ID is required." });
+//     }
 
-    // Check if newStatus is provided
-    if (!newStatus) {
-        return res.status(400).json({ error: "New status is required." });
-    }
+//     // Check if newStatus is provided
+//     if (!newStatus) {
+//         return res.status(400).json({ error: "New status is required." });
+//     }
+
+//     try {
+//         // Call the UpdateReservationStatus stored procedure
+//         const procedure = await pool.request()
+//             .input('ReservationID', mssql.Int, reservationID)
+//             .input('NewStatus', mssql.VarChar(50), newStatus)
+//             .execute('UpdateReservationStatus');
+
+//         res.status(200).json({ message: "Reservation status updated successfully." });
+//     } catch (error) {
+//         console.error("Error updating reservation status:", error);
+//         res.status(500).json({ error: "An error occurred while updating reservation status." });
+//     }
+// });
+// Endpoint to update reservation status by ID
+Router.put('/updateReservationStatus/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
 
     try {
-        // Call the UpdateReservationStatus stored procedure
-        const procedure = await pool.request()
-            .input('ReservationID', mssql.Int, reservationID)
-            .input('NewStatus', mssql.VarChar(50), newStatus)
-            .execute('UpdateReservationStatus');
+        // Update the status of the reservation with the specified ID
+        await pool.request()
+            .input('id', mssql.Int, id)
+            .input('status', mssql.VarChar(50), status)
+            .query('UPDATE Reservations SET Status = @status WHERE ReservationID = @id');
 
+        // Send a success response
         res.status(200).json({ message: "Reservation status updated successfully." });
     } catch (error) {
         console.error("Error updating reservation status:", error);
         res.status(500).json({ error: "An error occurred while updating reservation status." });
     }
 });
+
 
 
 // Endpoint to update order status
@@ -128,7 +148,7 @@ Router.put('/updateOrderPaymentStatus/:orderId', async (req, res) => {
         const { orderId } = req.params;
         const query = `
             UPDATE Orders
-            SET PaymentStatus = 'Received'
+            SET PaymentStatus = 'Confirmed'
             WHERE OrderID = ${orderId};
         `;
         await pool.request().query(query);
