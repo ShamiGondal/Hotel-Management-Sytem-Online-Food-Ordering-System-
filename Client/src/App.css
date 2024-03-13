@@ -279,6 +279,11 @@
 
 
 
+/*footer li hover efffect*/
+
+.list-unstyled li a:hover {
+  font-size: 15px; /* Green color on hover */
+}
 
 
 

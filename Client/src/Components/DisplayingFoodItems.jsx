@@ -66,7 +66,7 @@ function DisplayingFoodItems() {
     };
 
     const [orderItems, setOrderItems] = useState([]);
-  
+
     // Function to add item to cart
     const handleAddToCart = (foodItem) => {
         console.log('Adding to cart:', foodItem);
@@ -108,7 +108,7 @@ function DisplayingFoodItems() {
                     <div className="carousel-inner">
                         <div className="carousel-item active text-center">
                             <img src={image1} className="d-block w-100" alt="Slide 1" />
-                            <div className="carousel-caption d-none d-md-block position-absolute top-50 start-50 translate-middle ">
+                            <div className="carousel-caption d-none d-md-block position-absolute top-50 start-50 translate-middle bg-light bg-opacity-25 h-25 rounded-3    ">
                                 <h1 className='animate__animated animate__backInLeft fs-1 fw-bolder'>Pakistani Kahnoo ki kia baat ha!</h1>
                                 <p className='animate__animated animate__backInLeft'>Try out our new Pakistani Dishes.</p>
                                 <p className='animate__animated animate__backInLeft'>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Sed rerum iusto magni?</p>
@@ -256,14 +256,14 @@ function DisplayingFoodItems() {
                                 <div className="col-12 col-md-9">
                                     <div className="container">
                                         <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 g-4">
-                                            {foodItems.slice(0, 6).map((foodItem, index) => (
+                                            {foodItems && foodItems.slice(0, 6).map((foodItem, index) => (
                                                 <button
                                                     className="border-0 bg-transparent"
                                                     onClick={() => showDetails(foodItem)}
                                                     key={foodItem.FoodItemID}
                                                     style={{ position: 'relative', zIndex: 1 }}
                                                 >
-                                                    <div className={`card rounded-2 position-relative bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
+                                                    <div className={`card rounded-2 position-relative bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container text-${isDarkMode ? 'light' : 'dark'}`}>
                                                         <img className="card-img-top  rounded-top" src={items[index % images.length]} alt="Card image cap" />
                                                         <div className="position-absolute d-flex justify-content-between w-100">
                                                             <div className="bg-danger ms-2 p-1 pt-2 fs-6 fw-medium text-black bg-opacity-100 ">{foodItem.FoodItemDiscount}%</div>
@@ -272,24 +272,24 @@ function DisplayingFoodItems() {
 
                                                         <div className="card-body d-flex flex-column justify-content-between">
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">{foodItem.Name}</h5>
+                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Name}</h5>
                                                                 <h5 className="bg-success p-1 fs-6 fw-lighter bg-opacity-100 text-white">4.1</h5>
                                                             </div>
                                                             <div className="d-flex">
-                                                                <p className='text-dark fw-lighter' style={{ fontSize: "14px" }}>American Food, Fast Food</p>
+                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>American Food, Fast Food</p>
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">${foodItem.Price}</h5>
+                                                                <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>${foodItem.Price}</h5>
                                                                 <Rating
                                                                     readonly
-                                                                    className='text-success'
+                                                                    className='text-${isDarkMode? "success": "success" }'
                                                                     initialRating="4"
                                                                     emptySymbol={<i className="far fa-star"></i>}
                                                                     fullSymbol={<i className="fas fa-star"></i>}
                                                                 />
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">30-40min</h5>
+                                                                <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>30-40min</h5>
                                                             </div>
                                                         </div>
                                                         <div className="card-footer" style={{ zIndex: 2 }}>
@@ -326,24 +326,24 @@ function DisplayingFoodItems() {
 
                                                         <div className="card-body d-flex flex-column justify-content-between">
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">{foodItem.Name}</h5>
+                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Name}</h5>
                                                                 <h5 className="bg-success p-1 fs-6 fw-lighter bg-opacity-100 text-white">4.1</h5>
                                                             </div>
                                                             <div className="d-flex">
-                                                                <p className='text-dark fw-lighter' style={{ fontSize: "14px" }}>American Food, Fast Food</p>
+                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>American Food, Fast Food</p>
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">${foodItem.Price}</h5>
+                                                                <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>${foodItem.Price}</h5>
                                                                 <Rating
                                                                     readonly
-                                                                    className='text-success'
+                                                                    className='text-${isDarkMode? "success": "success" }'
                                                                     initialRating="4"
                                                                     emptySymbol={<i className="far fa-star"></i>}
                                                                     fullSymbol={<i className="fas fa-star"></i>}
                                                                 />
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className="card-title fs-6 text-dark fw-light ">30-40min</h5>
+                                                                <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>30-40min</h5>
                                                             </div>
                                                         </div>
                                                         <div className="card-footer" style={{ zIndex: 2 }}>
@@ -378,7 +378,7 @@ function DisplayingFoodItems() {
 
 
 
-                        <div className="row row-cols-1 row-cols-md-2 g-4 mt-5">
+                            <div className="row row-cols-1 row-cols-md-2 g-4 mt-5">
                                 <div className="col">
                                     <div className="position-relative">
                                         <img src={asside2} className="w-100" style={{ height: "20rem" }} alt="Image 1" />
@@ -397,73 +397,82 @@ function DisplayingFoodItems() {
 
                     </>
                 )}
+                <footer className={` bg-${isDarkMode ? "dark": "light"}  text-${isDarkMode? "white": "black" } py-5 mt-4`}>
+                <div className="container">
+    <h4 className='text-uppercase text-center mb-5 fw-bold' style={{ color: '#6c757d' }}>Indian Restaurant</h4>
+    <div className="row">
+        {/* Contact Information */}
+        <div className="col-lg-3 col-md-6 mb-4 mb-lg-0">
+            <h5 className="mb-4" style={{ color: '#6c757d' }}>Contact Info</h5>
+            <ul className="list-unstyled" style={{ color: '#6c757d' }}>
+                <li className='mb-2 '>
+                    <i className="fas fa-phone-alt me-2 text-danger "></i>
+                    <a href="tel:+1234567890" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>(123) 456-7890</a>
+                </li>
+                <li className='mb-2 '>
+                    <i className="fas fa-envelope me-2 text-primary"></i>
+                    <a href="mailto:info@example.com" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>info@example.com</a>
+                </li>
+                <li className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic  mb-2   `}>
+                    <i className="fas fa-map-marker-alt me-2 text-primary"></i>
+                    123 Main Street, City
+                </li>
+            </ul>
+        </div>
+        {/* About Us */}
+        <div className="col-lg-3 col-md-6 mb-4 mb-lg-0">
+            <h5 className="mb-4" style={{ color: '#6c757d' }}>About Us</h5>
+            <ul className="list-unstyled" style={{ color: '#6c757d' }}>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Intro</a></li>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Privacy Policy</a></li>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Mission</a></li>
+            </ul>
+        </div>
+        {/* Shops */}
+        <div className="col-lg-3 col-md-6 mb-4 mb-lg-0">
+            <h5 className="mb-4" style={{ color: '#6c757d' }}>Shops</h5>
+            <ul className="list-unstyled" style={{ color: '#6c757d' }}>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Lille France Jai Ho</a></li>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Indian Restaurant</a></li>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Namasta France</a></li>
+                <li className='mb-2 '><a href="#" style={{ color: '#6c757d' }} className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Desi Meal France</a></li>
+            </ul>
+        </div>
+        {/* Restaurants */}
+        <div className="col-lg-3 col-md-6 mb-4 mb-lg-0">
+            <h5 className="mb-4" style={{ color: '#6c757d' }}>Products</h5>
+            <ul className="list-unstyled" style={{ color: '#6c757d' }}>
+                <li className='mb-2 '><a href="#" className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Malai Boti</a></li>
+                <li className='mb-2 '><a href="#" className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Tikka Boti</a></li>
+                <li className='mb-2 '><a href="#" className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Sekah Kabab</a></li>
+                <li className='mb-2 '><a href="#" className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Rogni Naan</a></li>
+                <li className='mb-2 '><a href="#" className={` text-decoration-none  fw-light text-${isDarkMode? "light": "success" } fst-italic     `}>Mundi</a></li>
+            </ul>
+        </div>
+    </div>
 
-                <footer className="bg-dark text-white py-5 mt-4">
-                    <div className="container">
-                        <h4 className='text-capitalize text-center mb-5 '>Indian Resturnat</h4>
-                        <div className="row">
-                            {/* Contact Information */}
-                            <div className="col-lg-4 col-md-6 mb-4 mb-lg-0 gap-1 ">
-                                <h5 className="mb-4">Contact Information</h5>
-                                <ul className="list-unstyled">
-                                    <li>
-                                        <i className="fas fa-phone-alt me-2"></i>
-                                        <a href="tel:+1234567890">(123) 456-7890</a>
-                                    </li>
-                                    <li>
-                                        <i className="fas fa-envelope me-2"></i>
-                                        <a href="mailto:info@example.com">info@example.com</a>
-                                    </li>
-                                    <li>
-                                        <i className="fas fa-map-marker-alt me-2"></i>
-                                        123 Main Street, City
-                                    </li>
-                                </ul>
-                            </div>
-                            {/* About Us */}
-                            <div className="col-lg-4 col-md-6 mb-4 mb-lg-0">
-                                <h5 className="mb-4">About Us</h5>
-                                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla commodo neque vel sapien malesuada, at ultricies nulla hendrerit.</p>
-                            </div>
-                            {/* Restaurant List */}
-                            <div className="col-lg-4 col-md-6 mb-4 mb-md-0">
-                                <h5 className="mb-4">Restaurants</h5>
-                                <ul className="list-unstyled">
-                                    <li><a href="#">Restaurant 1</a></li>
-                                    <li><a href="#">Restaurant 2</a></li>
-                                    <li><a href="#">Restaurant 3</a></li>
-                                    {/* Add more restaurants as needed */}
-                                </ul>
-                            </div>
-                        </div>
-                        {/* Subscribe Section */}
-                        <div className="row mt-4">
-                            <div className="col-md-6">
-                                <h5 className="mb-4">Subscribe to Our Newsletter</h5>
-                                <div className="input-group">
-                                    <input type="email" className="form-control" placeholder="Enter your email" aria-label="Enter your email" />
-                                    <button className="btn btn-primary" type="button">Subscribe</button>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Social Media Icons */}
-                        <div className="row mt-4">
-                            <div className="col">
-                                <h5 className="mb-4">Follow Us</h5>
-                                <ul className="list-unstyled d-flex flex-wrap gap-2">
-                                    <li><a href="#"><i className="fab fa-facebook fa-lg"></i></a></li>
-                                    <li><a href="#"><i className="fab fa-twitter fa-lg"></i></a></li>
-                                    <li><a href="#"><i className="fab fa-instagram fa-lg"></i></a></li>
-                                    <li><a href="#"><i className="fab fa-linkedin fa-lg"></i></a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
+    {/* Social Media Icons */}
+    <div className="row mt-4 justify-content-end">
+        <div className="col-auto">
+            <h5 className="mb-4" style={{ color: '#6c757d' }}>Follow Us</h5>
+            <ul className="list-unstyled d-flex flex-wrap gap-4">
+                <li><a href="#"><i className="fab fa-facebook fa-lg text-primary"></i></a></li>
+                <li><a href="#"><i className={`fab fa-twitter fa-lg text-${isDarkMode ? 'light' : 'dark'} `}></i></a></li>
+                <li><a href="#"><i className="fab fa-instagram fa-lg text-danger"></i></a></li>
+                <li><a href="#"><i className="fab fa-linkedin fa-lg text-primary"></i></a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
                     {/* Copyright */}
-                    <div className="text-center p-3 bg-secondary mt-4">
-                        © {new Date().getFullYear()} Food Website. All rights reserved.
+                    <div className="text-center text-white p-3 bg-warning mt-4 position-absolute end-0 w-100 flex flex-column">
+                        © {new Date().getFullYear()} Food Website. All rights reserved. | Terms & Conditions | Cookies Privacy
+                        <p><small>Professional Website Developed by Lofty Logistics Inc.</small></p>
                     </div>
                 </footer>
+
+
             </div>
         </>
     );

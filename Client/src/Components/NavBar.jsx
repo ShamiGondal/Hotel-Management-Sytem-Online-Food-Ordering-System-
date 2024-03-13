@@ -290,8 +290,8 @@ const Navbar = () => {
                                         }}
                                     >
                                         <img src={imageSrc} alt="Footer Logo" style={{ height: '30px', width: '30px', marginRight: '20px', borderRadius: '50%' }} />
-                                        <div className="d-flex text-dark fw-medium" style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
-                                            Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName.split(' ')[0]}  `}
+                                        <div className={`d-flex text-${isDarkMode ? 'light' : 'dark'} fw-medium`} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                            Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName}  `}
                                             <i className="fa-solid fa-caret-down text-danger ms-2 fs-6 "></i>
                                         </div>
                                         {/* Custom Menu */}
@@ -428,7 +428,7 @@ const Navbar = () => {
                                             >
                                                 <img src={imageSrc} alt="Footer Logo" style={{ height: '60px', width: '60px', marginRight: '20px', borderRadius: '50%' }} />
                                                 <div className="d-flex text-dark fw-medium" style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
-                                                    Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName.split(' ')[0]}  `}
+                                                    Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName}  `}
                                                     <i className="fa-solid fa-caret-up text-danger ms-2 fs-6 "></i>
                                                 </div>
                                             </button>

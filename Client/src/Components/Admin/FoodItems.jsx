@@ -118,7 +118,7 @@ function Fooditems() {
   return (
     <Container>
       <Row xs={1} md={2} lg={3} className="g-4">
-        {foodItems.map((foodItem, index) => (
+        { foodItems.length>0 && foodItems.map((foodItem, index) => (
           <Col key={foodItem.FoodItemID}>
             <Card style={{ width: '100%', height: '100%' }}>
               <Card.Body>

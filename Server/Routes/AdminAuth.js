@@ -16,14 +16,15 @@ const generateToken = (AdminID) => {
 
 // Endpoint for inserting admins
 
+
 Router.post('/addAdmin', [
     //added validation using the validator
-    body("userName", "Enter the correct userName").isLength({min:3}),
-    body("password", "Password must be atleast 5 Characters").isLength({ min: 5 }),
-    
+    body("userName", "Enter the correct userName").isLength({ min: 3 }),
+    body("password", "Password must be at least 5 Characters").isLength({ min: 5 }),
+
 ], async (req, res) => {
-    const { adminID, userName, password } = req.body;
-    let success = false
+    const { userName, password } = req.body;
+    let success = false;
     const result = validationResult(req);
     if (!result.isEmpty()) {
         return res.status(400).json({ success, result: result.array() });
@@ -31,45 +32,38 @@ Router.post('/addAdmin', [
 
     try {
         // Check if all required fields are provided
-        if (!adminID || !userName || !password) {
+        if (!userName || !password) {
             return res.status(400).json({ error: "Missing required fields in the request body." });
-            success = false
         }
 
-        // Start a transaction
-        const transaction = await pool.transaction();
+        // Hash the password before storing it
+        const hashedPassword = await bcrypt.hash(password, 10); // Using 10 rounds of salt
 
-        // Begin the transaction
-        await transaction.begin();
+        // Insert admin into the database
+        pool.query('INSERT INTO Admins (UserName, Password) VALUES (?, ?)',
+            [userName, hashedPassword],
+            async (error, results) => {
+                if (error) {
+                    console.error('Error inserting admin:', error);
+                    return res.status(500).json({ error: 'An error occurred while inserting the admin.' });
+                }
 
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-        // Insert admin using the stored procedure
-        const adminInsertQuery = `
-            EXEC InsertAdmin @AdminID = ${adminID}, @UserName = '${userName}', @Password = '${hashedPassword}';
-        `;
-        await transaction.request().query(adminInsertQuery);
+                const adminID = results.insertId;
 
-        // Commit the transaction
-        await transaction.commit();
+                const token = generateToken(adminID);
 
-        const token = generateToken(adminID);
-
-        res.status(200).json({
-            message: "Admin inserted successfully.",
-            user: {
-                AdminID: adminID,
-                UserName: userName,
-                Password : hashedPassword
-            },
-            token
-        });
-        success = true
+                res.status(200).json({
+                    message: "Admin inserted successfully.",
+                    user: {
+                        AdminID: adminID,
+                        UserName: userName,
+                        Password: hashedPassword
+                    },
+                    token
+                });
+            });
     } catch (error) {
-        // If an error occurs, rollback the transaction
         console.error("Error inserting admin:", error);
-        if (error && error.transaction) {
-            await error.transaction.rollback();
-        }
         res.status(500).json({ error: "An error occurred while inserting the admin." });
     }
 });
@@ -86,39 +80,41 @@ Router.post('/adminLogin', async (req, res) => {
         }
 
         // Query the database to retrieve admin details based on username
-        const adminQuery = `SELECT * FROM Admins WHERE UserName = @userName`;
-        const result = await pool.request()
-            .input('userName', mssql.NVarChar, userName)
-            .query(adminQuery);
+        const adminQuery = 'SELECT * FROM Admins WHERE UserName = ?';
+        pool.query(adminQuery, [userName], async (error, results) => {
+            if (error) {
+                console.error("Error logging in admin:", error);
+                return res.status(500).json({ error: "An error occurred while logging in." });
+            }
 
-        // Check if admin with the provided username exists
-        if (result.recordset.length === 0) {
-            return res.status(404).json({ error: "Admin not found." });
-        }
+            // Check if admin with the provided username exists
+            if (results.length === 0) {
+                return res.status(404).json({ error: "Admin not found." });
+            }
 
-        // Retrieve the hashed password from the database
-        const hashedPassword = result.recordset[0].Password;
+            // Retrieve the hashed password from the database
+            const hashedPassword = results[0].Password;
 
-        // Compare the provided password with the hashed password
-        const match = await bcrypt.compare(password, hashedPassword);
-        if (!match) {
-            return res.status(401).json({ error: "Incorrect password." });
-        }
+            // Compare the provided password with the hashed password
+            const match = await bcrypt.compare(password, hashedPassword);
+            if (!match) {
+                return res.status(401).json({ error: "Incorrect password." });
+            }
 
-        // Generate a JWT token
-        const token = generateToken(result.recordset[0].AdminID);
+            // Generate a JWT token
+            const token = generateToken(results[0].AdminID);
 
-        // Set the token into cookies
-        res.cookie('token', token, { httpOnly: true });
+            // Set the token into cookies
+            res.cookie('token', token, { httpOnly: true });
 
-        // Send the token back to the client
-        res.status(200).json({ token });
+            // Send the token back to the client
+            res.status(200).json({ token });
+        });
 
     } catch (error) {
         console.error("Error logging in admin:", error);
         res.status(500).json({ error: "An error occurred while logging in." });
     }
 });
-
 
 module.exports = Router;

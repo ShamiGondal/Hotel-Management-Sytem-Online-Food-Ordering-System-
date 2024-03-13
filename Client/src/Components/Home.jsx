@@ -141,8 +141,8 @@ function Home() {
         <div className="">
             <div className="container-fluid ">
                 <div className="row">
-                    <div className={`col-md-3 sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
-                        <Button className="toggle-btn mt-3" onClick={toggleSidebar}>
+                    <div className={`col-md-3 sidebar ${sidebarOpen ? 'open' : 'closed'} bg-${isDarkMode ? "dark" : "light"}`}>
+                        <Button className="toggle-btn  " onClick={toggleSidebar}>
                             {sidebarOpen ? <i className="fa-solid fa-xmark"></i> : <i className="fa-solid fa-arrow-right-from-bracket"></i>}
 
                         </Button>
@@ -255,7 +255,7 @@ function Home() {
                                                     <tr key={payment.PaymentID}>
                                                         <td>{payment.OrderID}</td>
                                                         <td>{new Date(payment.PaymentDate).toLocaleString()}</td>
-                                                        <td>${payment.Amount.toFixed(2)}</td>
+                                                        <td>${payment.Amount}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
