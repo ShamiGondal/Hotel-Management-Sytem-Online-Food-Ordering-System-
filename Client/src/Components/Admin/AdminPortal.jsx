@@ -11,7 +11,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import Settings from '../Admin/AdminSettings';
 import Orders from '../Admin/CustomerOrders';
 import Reservations from '../Reservations';
-import Complaints from '../Admin/CustomerOrders';
+import Complaints from '../Admin/Complaints';
 // import Feedback from '../Admin/CustomerFeedbacks';
 import CustomerDetails from '../Admin/CustomerDetails';
 import Payments from '../Admin/CustomerPayments';

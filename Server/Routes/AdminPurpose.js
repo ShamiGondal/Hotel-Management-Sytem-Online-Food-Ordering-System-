@@ -46,11 +46,27 @@ Router.post('/addFoodItems', (req, res) => {
 
 // Endpoint to fetch all customers
 
-
+// Endpoint to fetch all customers
+Router.get('/getCustomers', async (req, res) => {
+    try {
+        const customerQuery = 'SELECT * FROM Customers';
+        pool.query(customerQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching customer:", error);
+                return res.status(500).json({ error: "An error occurred while fetching customers." });
+            }
+            res.status(200).json(results);
+        });
+    } catch (error) {
+        console.error("Error fetching customers:", error);
+        res.status(500).json({ error: "An error occurred while fetching customers." });
+    }
+});
 
 Router.get('/getCustomer', fetchCustomer, async (req, res) => {
     const customerId = req.user;
     try {
+
         const [rows, fields] = await pool.promise().query('SELECT * FROM Customers WHERE CustomerID = ?', [customerId]);
         if (rows.length === 0) {
             return res.status(404).json({ error: "Customer not found." });
@@ -106,8 +122,16 @@ Router.get('/getFoodItems', (req, res) => {
 // Endpoint to fetch orders
 Router.get('/getOrders', async (req, res) => {
     try {
-        const result = await pool.promise().query('SELECT * FROM Orders');
-        res.status(200).json(result);
+        const orderquery ='SELECT * FROM Orders';
+        pool.query(orderquery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
+        
+        
     } catch (error) {
         console.error("Error fetching orders:", error);
         res.status(500).json({ error: "An error occurred while fetching orders." });
@@ -118,8 +142,15 @@ Router.get('/getOrders', async (req, res) => {
 // Endpoint to fetch reservations
 Router.get('/getReservations', async (req, res) => {
     try {
-        const result = await pool.promise().query('SELECT * FROM Reservations');
-        res.status(200).json(result);
+        reservationQuery='SELECT * FROM Reservations';
+        pool.query(reservationQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
+        
     } catch (error) {
         console.error("Error fetching reservations:", error);
         res.status(500).json({ error: "An error occurred while fetching reservations." });
@@ -130,8 +161,17 @@ Router.get('/getReservations', async (req, res) => {
 // Endpoint to fetch feedback
 Router.get('/getFeedback', async (req, res) => {
     try {
-        const result = await pool.promise().query('SELECT * FROM Feedback');
-        res.status(200).json(result);
+
+      const  getFeedBackQuery='SELECT * FROM Feedback';
+        pool.query(getFeedBackQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
+        
+        
     } catch (error) {
         console.error("Error fetching feedback:", error);
         res.status(500).json({ error: "An error occurred while fetching feedback." });
@@ -141,9 +181,15 @@ Router.get('/getFeedback', async (req, res) => {
 //EndPoint to fetch all Complaints
 Router.get('/getComplaints', async (req, res) => {
     try {
-        const result = await pool.promise().query('SELECT * FROM Complaints');
-        const complaints = result;
-
+        
+        const getComplaintsQuery='SELECT * FROM Complaints';
+        pool.query(getComplaintsQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
         res.status(200).json(complaints);
     } catch (error) {
         console.error('Error fetching complaints:', error);
@@ -156,10 +202,15 @@ Router.get('/getComplaints', async (req, res) => {
 
 Router.get('/getPayments', async (req, res) => {
     try {
-        const query = 'SELECT * FROM Payments';
-        const result = await pool.promise().query(query);
-        const payments = result;
-        res.status(200).json({ payments });
+        const getPaymentsQuery='SELECT * FROM Payments';
+        pool.query(getPaymentsQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
+        
     } catch (error) {
         console.error("Error fetching payments:", error);
         res.status(500).json({ error: "An error occurred while fetching payments." });
@@ -170,14 +221,15 @@ Router.get('/getPayments', async (req, res) => {
 
 Router.get('/reports', async (req, res) => {
     try {
-        // Query to fetch data from the Report table
-        const query = 'SELECT * FROM Report';
-
-        // Execute the query
-        const result = await pool.promise().query(query);
-
-        // Send the fetched data in the response
-        res.status(200).json(result);
+        const getReportsQuery='SELECT * FROM Report';
+        pool.query(getReportsQuery, (error, results) => {
+            if (error) {
+                console.error("Error fetching food items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching food items." });
+            }
+            res.status(200).json(results);
+        });
+        
     } catch (error) {
         console.error("Error fetching report data:", error);
         res.status(500).json({ error: "An error occurred while fetching report data." });

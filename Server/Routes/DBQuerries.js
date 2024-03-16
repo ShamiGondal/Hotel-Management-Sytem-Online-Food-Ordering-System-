@@ -31,287 +31,336 @@ const Router = express.Router();
 //     }
 // });
 // Endpoint to update reservation status by ID
-Router.put('/updateReservationStatus/:id', async (req, res) => {
+Router.put('/updateReservationStatus/:id', (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
-
+  
     try {
-        // Update the status of the reservation with the specified ID
-        await pool.request()
-            .input('id', mssql.Int, id)
-            .input('status', mssql.VarChar(50), status)
-            .query('UPDATE Reservations SET Status = @status WHERE ReservationID = @id');
-
-        // Send a success response
-        res.status(200).json({ message: "Reservation status updated successfully." });
+      // Perform the update in the database
+      const query = 'UPDATE Reservations SET Status = ? WHERE ReservationID = ?';
+      pool.query(query, [status, id], (error, results) => {
+        if (error) {
+          console.error("Error updating reservation status:", error);
+          res.status(500).json({ error: "An error occurred while updating reservation status." });
+        } else {
+          res.status(200).json({ message: "Reservation status updated successfully." });
+        }
+      });
     } catch (error) {
-        console.error("Error updating reservation status:", error);
-        res.status(500).json({ error: "An error occurred while updating reservation status." });
+      console.error("Error updating reservation status:", error);
+      res.status(500).json({ error: "An error occurred while updating reservation status." });
     }
-});
-
+  });
 
 
 // Endpoint to update order status
 Router.put('/updateOrderStatus/:orderID', async (req, res) => {
     const { orderID } = req.params;
     const { newStatus } = req.body;
-
+  
     try {
-        // Check if orderID is a valid integer
-        if (!Number.isInteger(parseInt(orderID))) {
-            return res.status(400).json({ error: "Invalid orderID format." });
+      // Check if orderID is a valid integer
+      if (!Number.isInteger(parseInt(orderID))) {
+        return res.status(400).json({ error: "Invalid orderID format." });
+      }
+  
+      // Check if newStatus is provided and is a valid string
+      if (!newStatus || typeof newStatus !== 'string') {
+        return res.status(400).json({ error: "Invalid newStatus value." });
+      }
+  
+      // Perform the update in the database
+      const query = `
+        UPDATE Orders
+        SET Status = ?
+        WHERE OrderID = ?;
+      `;
+      pool.query(query, [newStatus, orderID], (error, results) => {
+        if (error) {
+          console.error("Error updating order status:", error);
+          res.status(500).json({ error: "An error occurred while updating order status." });
+        } else {
+          res.status(200).json({ message: "Order status updated successfully." });
         }
-
-        // Check if newStatus is provided and is a valid string
-        if (!newStatus || typeof newStatus !== 'string') {
-            return res.status(400).json({ error: "Invalid newStatus value." });
-        }
-
-        // Call the UpdateOrderStatus stored procedure
-        const procedure = await pool.request()
-            .input('OrderID', mssql.Int, orderID)
-            .input('NewStatus', mssql.VarChar(50), newStatus)
-            .execute('UpdateOrderStatus');
-
-        res.status(200).json({ message: "Order status updated successfully." });
+      });
     } catch (error) {
-        console.error("Error updating order status:", error);
-        res.status(500).json({ error: "An error occurred while updating order status." });
+      console.error("Error updating order status:", error);
+      res.status(500).json({ error: "An error occurred while updating order status." });
     }
-});
+  });
 
-
-// Endpoint to update complaint status
-Router.put('/updateComplaintStatus/:complaintID', async (req, res) => {
+  Router.get('/api/getComplaints', (req, res) => {
+    const query = 'SELECT * FROM Complaints';
+    connection.query(query, (err, results) => {
+      if (err) {
+        console.error('Error fetching complaints:', err);
+        res.status(500).json({ error: 'Error fetching complaints' });
+        return;
+      }
+      res.json(results); // This line sends a response to the client
+    });
+  });
+  
+  
+  // Update complaint status
+  Router.put('/api/updateComplaintStatus/:complaintID', (req, res) => {
     const { complaintID } = req.params;
     const { isResolved } = req.body;
-
+  
     try {
-        // Check if complaintID is a valid integer
-        if (!Number.isInteger(parseInt(complaintID))) {
-            return res.status(400).json({ error: "Invalid complaintID format." });
+      // Check if complaintID is a valid integer
+      if (!Number.isInteger(parseInt(complaintID))) {
+        return res.status(400).json({ error: "Invalid complaintID format." });
+      }
+  
+      // Check if isResolved is provided and is a valid boolean
+      if (typeof isResolved !== 'boolean') {
+        return res.status(400).json({ error: "Invalid isResolved value." });
+      }
+  
+      // Perform the update in the database
+      const query = `
+        UPDATE Complaints
+        SET IsResolved = ?
+        WHERE ComplaintID = ?;
+      `;
+      connection.query(query, [isResolved, complaintID], (error, results) => {
+        if (error) {
+          console.error("Error updating complaint status:", error);
+          res.status(500).json({ error: "An error occurred while updating complaint status." });
+        } else {
+          res.status(200).json({ message: "Complaint status updated successfully." });
         }
-
-        // Check if isResolved is provided and is a valid boolean
-        if (typeof isResolved !== 'boolean') {
-            return res.status(400).json({ error: "Invalid isResolved value." });
-        }
-
-        // Call the UpdateComplaintStatus stored procedure
-        const procedure = await pool.request()
-            .input('ComplaintID', mssql.Int, complaintID)
-            .input('IsResolved', mssql.Bit, isResolved)
-            .execute('UpdateComplaintStatus');
-
-        res.status(200).json({ message: "Complaint status updated successfully." });
+      });
     } catch (error) {
-        console.error("Error updating complaint status:", error);
-        res.status(500).json({ error: "An error occurred while updating complaint status." });
+      console.error("Error updating complaint status:", error);
+      res.status(500).json({ error: "An error occurred while updating complaint status." });
     }
-});
+  });
+
+// Endpoint to update complaint status
+// Router.put('/updateComplaintStatus/:complaintID', async (req, res) => {
+//     const { complaintID } = req.params;
+//     const { isResolved } = req.body;
+  
+//     try {
+//       // Check if complaintID is a valid integer
+//       if (!Number.isInteger(parseInt(complaintID))) {
+//         return res.status(400).json({ error: "Invalid complaintID format." });
+//       }
+  
+//       // Check if isResolved is provided and is a valid boolean
+//       if (typeof isResolved !== 'boolean') {
+//         return res.status(400).json({ error: "Invalid isResolved value." });
+//       }
+  
+//       // Perform the update in the database
+//       const query = `
+//         UPDATE Complaints
+//         SET IsResolved = ?
+//         WHERE ComplaintID = ?;
+//       `;
+//       pool.query(query, [isResolved, complaintID], (error, results) => {
+//         if (error) {
+//           console.error("Error updating complaint status:", error);
+//           res.status(500).json({ error: "An error occurred while updating complaint status." });
+//         } else {
+//           res.status(200).json({ message: "Complaint status updated successfully." });
+//         }
+//       });
+//     } catch (error) {
+//       console.error("Error updating complaint status:", error);
+//       res.status(500).json({ error: "An error occurred while updating complaint status." });
+//     }
+//   });
 
 //Endpoint to update PaymentStatus in Order
 
 Router.put('/updatePaymentStatus/:orderID', async (req, res) => {
     const { orderID } = req.params;
     const { newPaymentStatus } = req.body;
-
+  
     try {
-        // Check if orderID is a valid integer
-        if (!Number.isInteger(parseInt(orderID))) {
-            return res.status(400).json({ error: "Invalid orderID format." });
+      // Check if orderID is a valid integer
+      if (!Number.isInteger(parseInt(orderID))) {
+        return res.status(400).json({ error: "Invalid orderID format." });
+      }
+  
+      // Check if newPaymentStatus is provided and is valid
+      const validPaymentStatusValues = ['Pending', 'Confirmed', 'Rejected'];
+      if (!validPaymentStatusValues.includes(newPaymentStatus)) {
+        return res.status(400).json({ error: "Invalid newPaymentStatus value." });
+      }
+  
+      // Perform the update in the database
+      const query = `
+        UPDATE Payments
+        SET PaymentStatus = ?
+        WHERE OrderID = ?;
+      `;
+      pool.query(query, [newPaymentStatus, orderID], (error, results) => {
+        if (error) {
+          console.error("Error updating payment status:", error);
+          res.status(500).json({ error: "An error occurred while updating payment status." });
+        } else {
+          res.status(200).json({ message: "Payment status updated successfully." });
         }
-
-        // Check if newPaymentStatus is provided and is valid
-        const validPaymentStatusValues = ['Pending', 'Confirmed', 'Rejected'];
-        if (!validPaymentStatusValues.includes(newPaymentStatus)) {
-            return res.status(400).json({ error: "Invalid newPaymentStatus value." });
-        }
-
-        // Call the UpdatePaymentStatus stored procedure
-        const result = await pool.request()
-            .input('OrderID', mssql.Int, orderID)
-            .input('NewPaymentStatus', mssql.VarChar(50), newPaymentStatus)
-            .execute('UpdatePaymentStatus');
-
-        res.status(200).json({ message: "Payment status updated successfully." });
+      });
     } catch (error) {
-        console.error("Error updating payment status:", error);
-        res.status(500).json({ error: "An error occurred while updating payment status." });
+      console.error("Error updating payment status:", error);
+      res.status(500).json({ error: "An error occurred while updating payment status." });
     }
-});
+  });
+  
 
 // Endpoint to update payment status in the order
 Router.put('/updateOrderPaymentStatus/:orderId', async (req, res) => {
     try {
-        const { orderId } = req.params;
-        const query = `
-            UPDATE Orders
-            SET PaymentStatus = 'Confirmed'
-            WHERE OrderID = ${orderId};
-        `;
-        await pool.request().query(query);
-        res.status(200).json({ message:` Payment status updated for order ${orderId}` });
-    }catch (error) {
-        console.error("Error updating payment status in order:", error);
-        res.status(500).json({ error: "An error occurred while updating payment status in order." });
-    }
-});
-
-// Endpoint to fetch payment details by order ID
-Router.get('/getPaymentByOrderId/:orderId', async (req, res) => {
-    try {
-        const { orderId } = req.params;
-        const query = `SELECT * FROM Payments WHERE OrderID = ${orderId};`
-        const result = await pool.request().query(query);
-        const payments = result.recordset;
-        res.status(200).json({ payments });
+      const { orderId } = req.params;
+      const query = `
+        UPDATE Orders
+        SET PaymentStatus = 'Confirmed'
+        WHERE OrderID = ?;
+      `;
+      pool.query(query, [orderId], (error, results) => {
+        if (error) {
+          console.error("Error updating payment status in order:", error);
+          res.status(500).json({ error: "An error occurred while updating payment status in order." });
+        } else {
+          res.status(200).json({ message: `Payment status updated for order ${orderId}` });
+        }
+      });
     } catch (error) {
-        console.error("Error fetching payments by order ID:", error);
-        res.status(500).json({ error: "An error occurred while fetching payments by order ID." });
+      console.error("Error updating payment status in order:", error);
+      res.status(500).json({ error: "An error occurred while updating payment status in order." });
     }
-});
+  });
+
+Router.get('/getPaymentByOrderId/:orderId', (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const query = `SELECT * FROM Payments WHERE OrderID = ?`;
+      
+      pool.query(query, [orderId], (error, results) => {
+        if (error) {
+          console.error("Error fetching payments by order ID:", error);
+          res.status(500).json({ error: "An error occurred while fetching payments by order ID." });
+        } else {
+          const payments = results;
+          res.status(200).json({ payments });
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching payments by order ID:", error);
+      res.status(500).json({ error: "An error occurred while fetching payments by order ID." });
+    }
+  });
 
 // Endpoint to insert a new payment record
-Router.post('/insertPayment', async (req, res) => {
+// Route for inserting payment
+Router.post('/insertPayment', (req, res) => {
     try {
-        const { OrderID, CustomerID, Amount, PaymentDate } = req.body;
-
-        // Validate input data
-        if (!OrderID || !CustomerID || !Amount || !PaymentDate) {
-            return res.status(400).json({ error: "Missing required fields." });
-        }
-
-        // Perform the insertion into the database
-        const query = `
-            INSERT INTO Payments (OrderID, CustomerID, Amount, PaymentDate)
-            VALUES (@OrderID, @CustomerID, @Amount, @PaymentDate);
-        `;
-        await pool.request()
-            .input('OrderID', mssql.Int, OrderID)
-            .input('CustomerID', mssql.Int, CustomerID)
-            .input('Amount', mssql.Decimal(10, 2), Amount)
-            .input('PaymentDate', mssql.DateTime, PaymentDate)
-            .query(query);
-
-        res.status(201).json({ message: "Payment record inserted successfully." });
-    } catch (error) {
-        console.error("Error inserting payment record:", error);
-        res.status(500).json({ error: "An error occurred while inserting payment record." });
-    }
-});
-
-// Endpoint to confirm or reject an order
-Router.put('/updateOrderStatus/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { action } = req.body;
-        
-        // Update the order status based on the action
-        let status;
-        if (action === 'confirm') {
-            status = 'Confirmed';
-        } else if (action === 'reject') {
-            status = 'Rejected';
+      const { OrderID, CustomerID, Amount, PaymentDate } = req.body;
+  
+      // Validate input data
+      if (!OrderID || !CustomerID || !Amount || !PaymentDate) {
+        return res.status(400).json({ error: "Missing required fields." });
+      }
+  
+      // Convert PaymentDate to the appropriate MySQL format
+      const formattedPaymentDate = new Date(PaymentDate).toISOString().slice(0, 19).replace('T', ' ');
+  
+      // Perform the insertion into the database
+      const query = `
+        INSERT INTO Payments (OrderID, CustomerID, Amount, PaymentDate)
+        VALUES (?, ?, ?, ?);
+      `;
+  
+      pool.query(query, [OrderID, CustomerID, Amount, formattedPaymentDate], (error, results) => {
+        if (error) {
+          console.error("Error inserting payment record:", error);
+          res.status(500).json({ error: "An error occurred while inserting payment record." });
         } else {
-            return res.status(400).json({ error: "Invalid action. Please provide 'confirm' or 'reject'." });
+          res.status(201).json({ message: "Payment record inserted successfully." });
         }
-
-        const query = `
-            UPDATE Orders
-            SET Status = @status
-            WHERE OrderID = @id;
-        `;
-        await pool.request()
-            .input('id', mssql.Int, id)
-            .input('status', mssql.NVarChar(50), status)
-            .query(query);
-
-        res.status(200).json({ message:` Order ${action}ed successfully.` });
+      });
     } catch (error) {
-        console.error(`Error ${action}ing order:, error`);
-        res.status(500).json({ error: `An error occurred while ${action}ing order.` });
+      console.error("Error inserting payment record:", error);
+      res.status(500).json({ error: "An error occurred while inserting payment record." });
     }
-});
+  });
+
+
 
 
 // Endpoint to update food items
-Router.put('/updateFoodItem/:id', async (req, res) => {
+Router.put('/updateFoodItem/:id', (req, res) => {
     try {
-        const { id } = req.params;
-        const { Name, Price, Category, AvailableQuantity, FoodItemDiscount } = req.body;
-        
-        // Check if all required fields are present
-        if (!Name || !Price || !Category || !AvailableQuantity || !FoodItemDiscount) {
-            return res.status(400).json({ error: "All fields are required." });
+      const { id } = req.params;
+      const { Name, Price, Category, AvailableQuantity, FoodItemDiscount } = req.body;
+  
+      // Check if all required fields are present
+      if (!Name || !Price || !Category || !AvailableQuantity || !FoodItemDiscount) {
+        return res.status(400).json({ error: "All fields are required." });
+      }
+  
+      const query = `
+        UPDATE FoodItems 
+        SET 
+          Name = ?,
+          Price = ?,
+          Category = ?,
+          AvailableQuantity = ?,
+          FoodItemDiscount = ?
+        WHERE 
+          FoodItemID = ?;
+      `;
+  
+      pool.query(query, [Name, Price, Category, AvailableQuantity, FoodItemDiscount, id], (error, results) => {
+        if (error) {
+          console.error("Error updating food item:", error);
+          res.status(500).json({ error: "An error occurred while updating food item." });
+        } else {
+          res.status(200).json({ message: "Food item updated successfully." });
         }
-
-        
-
-        const query = `
-            UPDATE FoodItems 
-            SET 
-                Name = @Name,
-                Price = @Price,
-                Category = @Category,
-                AvailableQuantity = @AvailableQuantity,
-                FoodItemDiscount = @FoodItemDiscount
-            WHERE 
-                FoodItemID = @id;
-        `;
-        await pool.request()
-            .input('Name', mssql.NVarChar(100), Name)
-            .input('Price', mssql.Decimal(10, 2), Price)
-            .input('Category', mssql.NVarChar(50), Category)
-            .input('AvailableQuantity', mssql.Int, AvailableQuantity)
-            .input('FoodItemDiscount', mssql.Decimal(5, 2), FoodItemDiscount)
-            .input('id', mssql.Int, id)
-            .query(query);
-
-        res.status(200).json({ message: "Food item updated successfully." });
+      });
     } catch (error) {
-        console.error("Error updating food item:", error);
-        res.status(500).json({ error: "An error occurred while updating food item." });
+      console.error("Error updating food item:", error);
+      res.status(500).json({ error: "An error occurred while updating food item." });
     }
-});
+  });
 
 // Endpoint to update reservation status by ID
-Router.put('/updateReservationStatus/:id', async (req, res) => {
+Router.put('/updateReservationStatus/:id', (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
-
-    try {
-        // Update the status of the reservation with the specified ID
-        await pool.request()
-            .input('id', mssql.Int, id)
-            .input('status', mssql.VarChar(50), status)
-            .query('UPDATE Reservations SET Status = @status WHERE ReservationID = @id');
-
-        // Send a success response
-        res.status(200).json({ message: "Reservation status updated successfully." });
-    } catch (error) {
+  
+    const query = 'UPDATE Reservations SET Status = ? WHERE ReservationID = ?';
+  
+    pool.query(query, [status, id], (error, results) => {
+      if (error) {
         console.error("Error updating reservation status:", error);
         res.status(500).json({ error: "An error occurred while updating reservation status." });
-    }
-});
+      } else {
+        res.status(200).json({ message: "Reservation status updated successfully." });
+      }
+    });
+  });
 
-//for specific customer feedback
-Router.get('/getFeedback/:customerID', async (req, res) => {
+// Route for fetching specific customer feedback
+Router.get('/getFeedback/:customerID', (req, res) => {
     const { customerID } = req.params;
-
-    try {
-        // Fetch feedback for the specified customer
-        const result = await pool.request()
-            .input('CustomerID', customerID)
-            .query('SELECT * FROM Feedback WHERE CustomerID = @CustomerID');
-
-        // Return the feedback data
-        res.status(200).json(result.recordset);
-    } catch (error) {
+  
+    const query = 'SELECT * FROM Feedback WHERE CustomerID = ?';
+  
+    pool.query(query, [customerID], (error, results) => {
+      if (error) {
         console.error("Error fetching feedback:", error);
         res.status(500).json({ error: "An error occurred while fetching feedback." });
-    }
-});
+      } else {
+        res.status(200).json(results);
+      }
+    });
+  });
 
 module.exports = Router;

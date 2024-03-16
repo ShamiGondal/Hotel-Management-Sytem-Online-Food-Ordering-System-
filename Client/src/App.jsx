@@ -8,6 +8,7 @@ import AdminPortal from './Components/Admin/AdminPortal'
 import Reservations from './Components/Reservations'
 import Feedback from './Components/Feedback'
 import Complaints from './Components/Complaints'
+import AdminComplaints from './Components/Admin/Complaints'
 import FoodItems from './Components/Admin/FoodItems'
 import CustomerOrders from './Components/Admin/CustomerOrders'
 import CustomerReservations from './Components/Admin/CustomerReservations'
@@ -54,15 +55,18 @@ function App() {
                 <Route path={'/FoodItemDetails/:id'} element={<FoodItemDetails/>} />
               </Route>
 
-              <Route path={'/adminLogin'} element={<AdminLogin />} />
-              <Route path={'/adminPortal'} element={<AdminPortal />}> </Route>
+              
+              <Route path={'/adminPortal'} element={<AdminPortal />}></Route>
               <Route path={'Customer-Orders'} element={<CustomerOrders />} />
+              <Route path={'/adminLogin'} element={<AdminLogin />} />
               <Route path={'Customer-Reservations'} element={<CustomerReservations />} />
               <Route path={'Customer-Details'} element={<CustomerDetails />} />
               <Route path={'Customer-Payments'} element={<CustomerPayments />} />
               <Route path={'Customer-Feedbacks'} element={<CustomerFeedbacks />} />
               <Route path={'FoodItems'} element={<FoodItems />} />
               <Route path={'Admin-Settings'} element={<AdminSettings />} />
+              <Route path={'Customer-Complaints'} element={<AdminComplaints />} />
+              
 
 
             </Routes>
