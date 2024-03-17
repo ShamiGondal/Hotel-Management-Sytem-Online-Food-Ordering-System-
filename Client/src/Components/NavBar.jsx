@@ -23,9 +23,11 @@ import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
 
 const Navbar = () => {
+
+    //TODO : HAVE TO UPDATE THE DELIVERY BUTOON FUNCTIONALITY FOR NOW EVERYTIME IT TAKES ADDRESS BUT NEED TO UPDATE IT
+    
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState(null);
-    const [menuAnchorEl, setMenuAnchorEl] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(!!Cookies.get('token'));
     const [isChecked, setIsChecked] = useState(false);
     const navigate = useNavigate();
@@ -33,12 +35,13 @@ const Navbar = () => {
     const [Street, setStreet] = useState('');
     const [PhoneNumber, setPhoneNumber] = useState('');
     const [userDetails, setUserDetails] = useState({});
-    const [addresses, setAddresses] = useState([]);
     const [position, setPosition] = useState(null);
     const localhost = `http://localhost:4000`
     const { cartItems } = useCartContext();
+    const [imageSrc, setImageSrc] = useState('');
     const { isDarkMode, toggleDarkMode, isDrawerDarkMode, setIsDrawerDarkMode } = useDarkMode();
-
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
     useEffect(() => {
         setIsDrawerDarkMode(isDarkMode);
     }, [isDarkMode, setIsDrawerDarkMode]);
@@ -73,7 +76,6 @@ const Navbar = () => {
         toggleDarkMode();
 
     }
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleMenuOpens = () => {
         setIsMenuOpen(true);
@@ -89,7 +91,6 @@ const Navbar = () => {
         document.body.style.backgroundColor = 'white';
     }
 
-    const [imageSrc, setImageSrc] = useState('');
 
     useEffect(() => {
         const fetchImage = async () => {
@@ -154,7 +155,7 @@ const Navbar = () => {
         }
     }, []);
 
-
+    //EXTRACTING ADDRESS
     useEffect(() => {
         if (position) {
             const map = L.map('map').setView(position, 13);
@@ -245,12 +246,6 @@ const Navbar = () => {
         }
     };
 
-    
-
-
-
- 
-
 
     return (
         <>
@@ -337,9 +332,6 @@ const Navbar = () => {
                             </span>
                         </div>
                     </div>
-
-
-
                 </div>
             </nav>
             {/* modal for the delivery*/}
@@ -403,6 +395,7 @@ const Navbar = () => {
                             >
                                 <CloseIcon />
                             </IconButton>
+                            {/* {This is for small devices} */}
                             {Cookies.get('token') ?
                                 (
                                     <div className=" d-md-none " style={{ position: 'absolute', bottom: 55, right: 160, width: '100%', }}>
@@ -413,7 +406,7 @@ const Navbar = () => {
                                                 className="border-0 bg-transparent"
                                                 style={{
                                                     cursor: 'pointer',
-                                                    marginRight: '-19px',
+                                                    marginRight: '-43px',
                                                     marginBottom: 40,
                                                     position: 'absolute',
                                                     right: 0,
@@ -427,14 +420,14 @@ const Navbar = () => {
                                                 }}
                                             >
                                                 <img src={imageSrc} alt="Footer Logo" style={{ height: '60px', width: '60px', marginRight: '20px', borderRadius: '50%' }} />
-                                                <div className="d-flex text-dark fw-medium" style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                                <div className={`d-flex  fw-medium text-${isDarkMode ? 'light': 'dark'} `} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
                                                     Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName}  `}
                                                     <i className="fa-solid fa-caret-up text-danger ms-2 fs-6 "></i>
                                                 </div>
                                             </button>
 
                                             <ul
-                                                className="custom-menu"
+                                                className={`custom-menu  ` }
                                                 style={{
                                                     position: 'absolute',
                                                     top: 'calc(50% - 200px)', // Adjust the calculation based on the desired distance from the top

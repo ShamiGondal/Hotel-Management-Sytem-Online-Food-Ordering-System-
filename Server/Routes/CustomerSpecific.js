@@ -125,7 +125,7 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
         const getOrderQuery = `
             SELECT * FROM Orders WHERE OrderID = ?;
         `;
-        const [orderDetails] = await pool.query(getOrderQuery, [orderId]);
+        const [orderDetails] = await pool.promise().query(getOrderQuery, [orderId]);
 
         res.status(200).json({ message: "Order placed successfully.", orderDetails });
     } catch (error) {
@@ -135,6 +135,24 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
 });
 
 
+//get my orders
+
+// Router.get('/my-orders', fetchUser, async (req, res) => {
+//     const customerID = req.user;
+
+//     try {
+//         // Fetch orders for the customer
+//         const getOrdersQuery = `
+//             SELECT * FROM OrderItems WHERE CustomerID = ?;
+//         `;
+//         const [orders] = await pool.query(getOrdersQuery, [customerID]);
+
+//         res.status(200).json({ orders });
+//     } catch (error) {
+//         console.error("Error fetching orders:", error);
+//         res.status(500).json({ error: "An error occurred while fetching orders." });
+//     }
+// });
 
 
 

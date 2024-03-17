@@ -18,14 +18,12 @@ function Feedback() {
         if (token) {
             setLoggedIn(true);
         } else {
-            // Redirect to login page if token is not present
             window.location.href = '/login';
         }
     }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Only submit feedback if logged in
         if (!loggedIn) {
             return;
         }

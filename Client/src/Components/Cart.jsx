@@ -10,12 +10,14 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { useStripe, useElements } from '@stripe/react-stripe-js';
+import { useStripe } from '@stripe/react-stripe-js';
 
 
 const stripePromise = loadStripe('pk_test_51OINxgHgDxyW6XeqfBylUJikmmt49IPUqxlJazRsB9efRzOr0LvTlHGE13BwhNad29rn2dbTF8vgNZcFMhiyHlPf00Rk3E7pCN');
 
 const Cart = () => {
+
+    //TODO: Have to update the table to accpet the order Note too
     const stripe = useStripe();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -181,10 +183,19 @@ const Cart = () => {
         }
     };
 
+   useEffect(() => {
+    return () => {
+        if(!Cookies.get('token')){
+            navigate('/')
+        }
+    };
+   })
+
     return (
         <>
             <ToastContainer />
             <div className="mt-5 container pt-5">
+            {/* this part is the cart section show the cart details  */}
                 <div className={`p-5 card rounded-2 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} mt-5 pt-5 `}>
                     <div className="container">
                         <h2 className={`text-center mb-4  text-${isDarkMode ? 'light' : 'dark'}`}>Your <i className="fa-solid fa-cart-shopping text-success"></i> has <span className='text-warning' >{cartItems.length}</span> Items</h2>
@@ -238,7 +249,7 @@ const Cart = () => {
                             </div>
                         </div>
                         <div className="mt-4">
-                            <div className="card mb-3">
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark': 'light'} text-${isDarkMode ? 'light': 'dark'}  `}>
                                 <div className="card-body">
                                     <h5 className="card-title">Address</h5>
                                     <select
@@ -254,7 +265,7 @@ const Cart = () => {
                                 </div>
                             </div>
 
-                            <div className="card mb-3">
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark': 'light'} text-${isDarkMode ? 'light': 'dark'}  `}>
                                 <div className="card-body">
                                     <h5 className="card-title">Payment Option</h5>
                                     <div className="form-check">
@@ -276,7 +287,7 @@ const Cart = () => {
                     </div>
 
                 </div>
-
+                    {/* This dilogue box show the summary for the order that is going to be placed  */}
                 <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                     <DialogTitle>Order Summary</DialogTitle>
                     <DialogContent>

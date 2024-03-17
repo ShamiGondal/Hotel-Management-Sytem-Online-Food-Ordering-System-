@@ -4,6 +4,8 @@ import { useDarkMode } from './Hooks/DarkModeContext';
 import Cookies from 'js-cookie';
 
 function Complaints() {
+
+    //TODO : Have to beautify the complaint Page 
     const { isDarkMode } = useDarkMode();
     const [complaintType, setComplaintType] = useState('');
     const [complaintText, setComplaintText] = useState('');

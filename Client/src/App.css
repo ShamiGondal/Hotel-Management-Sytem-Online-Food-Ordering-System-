@@ -153,6 +153,7 @@
 }
 
 .food-items-container.dark-mode {
+  
   background-color: black; /* Change to your desired dark mode background color */
   color: white; /* Change to your desired dark mode text color */
 }
@@ -197,7 +198,7 @@
 /*slidebar*/
 
 .sidebar {
-  height: 110vh;
+  height: 120vh;
   background-color: #333;
   color: #fff;
   padding: 10px;
@@ -285,8 +286,97 @@
   font-size: 15px; /* Green color on hover */
 }
 
+/* ceatogryBtnHover*/
+
+.ceatogryBtnHover {
+  position: relative;
+}
+
+.ceatogryBtnHover::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.3s ease;
+}
+
+.ceatogryBtnHover:hover::after {
+  background-color: green;
+}
+
+
+
+body{
+  background: #f7f7ff;
+  margin-top:20px;
+}
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  word-wrap: break-word;
+  background-color: #fff;
+  background-clip: border-box;
+  border: 0 solid transparent;
+  border-radius: .25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px 0 rgb(218 218 253 / 65%), 0 2px 6px 0 rgb(206 206 238 / 54%);
+}
+.me-2 {
+  margin-right: .5rem!important;
+}
+
+
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.categories::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.categories {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Style the scrollbar track */
+.categories::-webkit-scrollbar-track {
+  background: #f1f1f1; /* A light grey */
+}
+
+/* Style the scrollbar handle */
+.categories::-webkit-scrollbar-thumb {
+  background: #888; /* A dark grey */
+}
+
+/* Display the scrollbar on hover */
+.categories:hover::-webkit-scrollbar {
+  display: block;
+}
 
 
 
 
 
+@media (min-width: 768px) {
+  .CustomMarginTop {
+    margin-top: -25px;
+  }
+}
+
+
+/*navbar menu */
+
+.custom-menu li:hover {
+  background-color: #dbd8d8 !important;
+}
+
+
+.bg-image {
+  background-image: url('./assets/brooke-lark-wMzx2nBdeng-unsplash.jpg '); /* Double-check the path */
+  background-size: cover;
+}
