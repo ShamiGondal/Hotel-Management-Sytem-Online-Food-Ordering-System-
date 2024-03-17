@@ -99,8 +99,8 @@ const FoodItemDetails = () => {
                     <div className="col-md-6">
 
                         <div className="col-md-12">
-                            <h2 className='fw-medium fs-3 text-dark'>{item.Name}</h2>
-                            <h5 className='fw-lighter fs-6 fst-italic   text-dark'>with Garllic Souce</h5>
+                            <h2 className={`fw-medium fs-3 text-${isDarkMode ? 'light' : 'dark'}`}>{item.Name}</h2>
+                            <h5 className={`fw-lighter fs-6 fst-italic  text-${isDarkMode ? 'light' : 'dark'} `}>with Garllic Souce</h5>
                             <Rating
                                 readonly
                                 className={`text-${isDarkMode ? "success" : "warning"}`}
@@ -108,7 +108,7 @@ const FoodItemDetails = () => {
                                 emptySymbol={<i className="far fa-star"></i>}
                                 fullSymbol={<i className="fas fa-star"></i>}
                             />
-                            <h5 className='fw-light fs-6    text-dark'>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Aliquid expedita facere voluptate quam aut? Nisi architecto ab vitae tempore veritatis molestiae illum ipsam ipsum perspiciatis nihil praesentium debitis perferendis repudiandae totam atque tenetur culpa sint voluptas, corporis animi optio sapiente. </h5>
+                            <h5 className={`fw-light fs-6   text-${isDarkMode ? 'light' : 'dark'} `}>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Aliquid expedita facere voluptate quam aut? Nisi architecto ab vitae tempore veritatis molestiae illum ipsam ipsum perspiciatis nihil praesentium debitis perferendis repudiandae totam atque tenetur culpa sint voluptas, corporis animi optio sapiente. </h5>
                             <p>Price <span className='ms-4 fw-medium'>${item.Price}</span></p>
                         
                             <div className="w-auto">
@@ -119,14 +119,14 @@ const FoodItemDetails = () => {
                     </div>
                 </div>
                 <div className=" mt-5">
-                    <h2 className='fw-medium fs-3 text-dark'>Poular Dishes</h2>
+                    <h2 className={`fw-medium fs-3 text-${isDarkMode ? 'light' : 'dark'}`}>Poular Dishes</h2>
                     <div className="container mt-5 mb-3">
                         <div className=" d-md-flex justify-content-between align-items-center">
                             <button className='text-danger bg-transparent border-0 border fw-medium'>See All Popular Dishes</button>
                         </div>
                         <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mt-3">
                             <div className="col mb-3">
-                                <div className="card" style={{ width: "17rem" }}>
+                                <div className={`card bg-${isDarkMode ? 'dark' : "light"  } text-${isDarkMode ? 'light' : 'dark'}`} style={{ width: "17rem" }}>
                                     <img className="card-img-top " src={image1} alt="Card image cap" />
                                     <div className="card-body">
                                         <h5 className="card-title">Chilli Check Pizza</h5>
@@ -136,7 +136,7 @@ const FoodItemDetails = () => {
                                 </div>
                             </div>
                             <div className="col">
-                                <div className="card " style={{ width: "17rem" }}>
+                                <div className={`card bg-${isDarkMode ? 'dark' : "light"  } text-${isDarkMode ? 'light' : 'dark'}`}style={{ width: "17rem" }}>
                                     <img className="card-img-top" src={image2} alt="Card image cap" />
                                     <div className="card-body">
                                         <h5 className="card-title">Kabab Chicken Pizza</h5>
@@ -146,7 +146,7 @@ const FoodItemDetails = () => {
                                 </div>
                             </div>
                             <div className="col">
-                                <div className="card" style={{ width: "17rem" }}>
+                                <div className={`card bg-${isDarkMode ? 'dark' : "light"  } text-${isDarkMode ? 'light' : 'dark'}`} style={{ width: "17rem" }}>
                                     <img className="card-img-top" src={image3} alt="Card image cap" />
                                     <div className="card-body">
                                         <h5 className="card-title">Papporni Chicken Pizza</h5>
@@ -156,7 +156,7 @@ const FoodItemDetails = () => {
                                 </div>
                             </div>
                             <div className="col">
-                                <div className="card" style={{ width: "17rem" }}>
+                                <div className={`card bg-${isDarkMode ? 'dark' : "light"  } text-${isDarkMode ? 'light' : 'dark'}`} style={{ width: "17rem" }}>
                                     <img className="card-img-top" src={image3} alt="Card image cap" />
                                     <div className="card-body">
                                         <h5 className="card-title">Papporni Chicken Pizza</h5>
@@ -170,10 +170,10 @@ const FoodItemDetails = () => {
                 </div>
 
                 <div className="mt-5 ">
-                    <h3 className='fw-medium fs-4 text-dark mb-4'>Leave a Review</h3>
+                    <h3 className={`fw-medium fs-4 text-${isDarkMode ? 'light' : 'dark'} mb-4`}>Leave a Review</h3>
                     <div className="mb-3">
                         <textarea
-                            className="form-control border-1  border-success"
+                            className={`form-control border-1  border-success bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}
                             rows="3"
                             placeholder="Enter your review..."
                             value={reviewText}
