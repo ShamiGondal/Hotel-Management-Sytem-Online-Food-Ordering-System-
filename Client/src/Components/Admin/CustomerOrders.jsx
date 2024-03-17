@@ -80,38 +80,85 @@ function Order() {
       console.error('Error rejecting order:', error);
     }
   };
-
-  // Function to confirm payment receipt
-  const handleConfirmPayment = async () => {
+  const handleConfirmOrder = async (orderId) => {
     try {
-      if (!selectedOrder) {
-        console.error('No order selected for payment confirmation');
-        return;
-      }
-
-      const response = await fetch('http://localhost:4000/api/insertPayment', {
-        method: 'POST',
+      const response = await fetch(`http://localhost:4000/api/updateOrderStatus/${orderId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          OrderID: selectedOrder.OrderID,
-          CustomerID: selectedOrder.CustomerID,
-          Amount: selectedOrder.TotalAmount,
-          PaymentDate: new Date().toISOString() // Use current date as payment date
+          newStatus: 'Confirmed'
         })
       });
-
       if (response.ok) {
-        await handleConfirmOrderStatus(selectedOrder.OrderID); // Update order status after payment confirmation
-        setMessage('Payment confirmed and order status updated successfully.');
+        setMessage('Order Confirmed successfully.');
+        setShowConfirmation(false);
+        fetchOrders(); // Refresh orders after successful rejection
       } else {
-        console.error('Failed to insert payment record:', response.statusText);
+        console.error('Failed to Confrim order:', response.statusText);
       }
     } catch (error) {
-      console.error('Error confirming payment:', error);
+      console.error('Error rejecting order:', error);
     }
   };
+
+  
+  // Function to update payment status of an order
+const updateOrderPaymentStatus = async (orderId) => {
+  try {
+    const response = await fetch(`http://localhost:4000/api/updateOrderPaymentStatus/${orderId}`, {
+      method: 'PUT'
+    });
+    if (response.ok) {
+      console.log(`Payment status updated for order ${orderId}`);
+      fetchOrders();
+    } else {
+      console.error('Failed to update payment status:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error updating payment status:', error);
+  }
+};
+
+
+
+  // Function to confirm payment receipt
+ // Function to confirm payment receipt
+// Function to confirm payment receipt
+const handleConfirmPayment = async () => {
+  try {
+    if (!selectedOrder) {
+      console.error('No order selected for payment confirmation');
+      return;
+    }
+
+    const response = await fetch('http://localhost:4000/api/insertPayment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        OrderID: selectedOrder.OrderID,
+        CustomerID: selectedOrder.CustomerID,
+        Amount: selectedOrder.TotalAmount,
+        PaymentDate: new Date().toISOString() // Use current date as payment date
+      })
+    });
+
+    if (response.ok) {
+      await updateOrderPaymentStatus(selectedOrder.OrderID); // Update payment status after payment confirmation
+      setMessage('Payment confirmed successfully.');
+      setShowConfirmation(false); // Close the modal after confirming payment
+    } else {
+      console.error('Failed to insert payment record:', response.statusText);
+    }
+  } catch (error) {
+    console.error('Error confirming payment:', error);
+  }
+};
+
+
 
   // Function to cancel confirmation
   const handleCancelConfirmation = () => {
@@ -145,7 +192,8 @@ function Order() {
                 </Card.Text>
                 {order.Status === 'Pending' &&
                   <div className="text-center">
-                    <Button variant="success" disabled={order.PaymentStatus === 'Pending'} onClick={handleConfirmPayment}>Confirm order</Button>
+                    <Button variant="success" disabled={order.PaymentStatus === 'Pending'} onClick={() => handleConfirmOrder(order.OrderID)}>Confirm order</Button>
+
                     {' '}
                     <Button variant="danger" onClick={() => handleRejectOrder(order.OrderID)}>Reject order</Button>
                   </div>
