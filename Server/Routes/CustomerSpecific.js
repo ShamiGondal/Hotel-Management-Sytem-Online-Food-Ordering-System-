@@ -42,16 +42,17 @@ Router.post('/uploadImage', upload.single('image'), fetchUser, async (req, res) 
 
 // Endpoint for inserting addresses
 Router.post('/addAddress', fetchUser, async (req, res) => {
-    const { addressID, address, phoneNumber } = req.body;
+    const { streetAddress, city, state, postalCode, country } = req.body;
     const customerID = req.user;
 
     try {
-        if (!addressID || !address || !phoneNumber) {
+        // Check for missing fields
+        if (!streetAddress || !city || !state || !postalCode || !country) {
             return res.status(400).json({ error: "Missing required fields in the request body." });
         }
 
-        const query = `INSERT INTO Addresses (AddressID, CustomerID, Address, PhoneNumber) VALUES (?, ?, ?, ?)`;
-        await pool.promise().query(query, [addressID, customerID, address, phoneNumber]);
+        const query = `INSERT INTO Addresses (CustomerID, StreetAddress, City, State, PostalCode, Country) VALUES (?, ?, ?, ?, ?, ?)`;
+        await pool.promise().query(query, [customerID, streetAddress, city, state, postalCode, country]);
 
         res.status(200).json({ message: "Address inserted successfully." });
     } catch (error) {
@@ -59,6 +60,7 @@ Router.post('/addAddress', fetchUser, async (req, res) => {
         res.status(500).json({ error: "An error occurred while inserting the address." });
     }
 });
+
 
 
 
@@ -80,7 +82,7 @@ function generateOrderItemId() {
 }
 
 Router.post('/placeOrder', fetchUser, async (req, res) => {
-    const { orderId, orderItems, paymentStatus, status } = req.body;
+    const { orderId, orderItems, paymentStatus, status ,orderNote} = req.body;
     const customerID = req.user;
 
     try {
@@ -97,10 +99,10 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
         // Insert order into Orders table
         const orderDate = new Date().toISOString().slice(0, 10);
         const orderInsertQuery = `
-            INSERT INTO Orders (OrderID, CustomerID, OrderDate, PaymentStatus, TotalAmount, Status)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO Orders (OrderID, CustomerID, OrderDate, PaymentStatus, TotalAmount, Status, OrderNote)
+            VALUES (?, ?, ?, ?, ?, ?,?);
         `;
-        await pool.promise().query(orderInsertQuery, [orderId, customerID, orderDate, paymentStatus, calculateTotalAmount(orderItems), status]);
+        await pool.promise().query(orderInsertQuery, [orderId, customerID, orderDate, paymentStatus, calculateTotalAmount(orderItems), status, orderNote]);
 
         // Insert order items into OrderItems table
         for (const item of orderItems) {
@@ -135,24 +137,94 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
 });
 
 
-//get my orders
 
-// Router.get('/my-orders', fetchUser, async (req, res) => {
-//     const customerID = req.user;
 
-//     try {
-//         // Fetch orders for the customer
-//         const getOrdersQuery = `
-//             SELECT * FROM OrderItems WHERE CustomerID = ?;
-//         `;
-//         const [orders] = await pool.query(getOrdersQuery, [customerID]);
+Router.get('/my-recent-orders', fetchUser, async (req, res) => {
+    const customerID = req.user;
 
-//         res.status(200).json({ orders });
-//     } catch (error) {
-//         console.error("Error fetching orders:", error);
-//         res.status(500).json({ error: "An error occurred while fetching orders." });
-//     }
-// });
+    try {
+        // Fetch the most recent three orders for the customer along with the food items
+        const getRecentOrderItemIDsQuery = `
+            SELECT OrderItems.FoodItemID
+            FROM Orders
+            INNER JOIN OrderItems ON Orders.OrderID = OrderItems.OrderID
+            WHERE Orders.CustomerID = ?
+            ORDER BY Orders.OrderDate DESC, Orders.OrderTime DESC
+            LIMIT 4;
+        `;
+        const [recentOrderItems] = await pool.promise().query(getRecentOrderItemIDsQuery, [customerID]);
+
+        // Extract food item IDs from the query result
+        const foodItemIDs = recentOrderItems.map(orderItem => orderItem.FoodItemID);
+
+        // Fetch food item details corresponding to the retrieved IDs
+        const getFoodItemDetailsQuery = `
+            SELECT FoodItemID, Title, Subtitle, Description, Price, ImageURL
+            FROM FoodItems
+            WHERE FoodItemID IN (?);
+        `;
+        const [foodItems] = await pool.promise().query(getFoodItemDetailsQuery, [foodItemIDs]);
+
+        res.status(200).json({ recentOrders: foodItems });
+    } catch (error) {
+        console.error("Error fetching recent orders:", error);
+        res.status(500).json({ error: "An error occurred while fetching recent orders." });
+    }
+});
+
+
+// POST request to add a review
+Router.post('/my-Review', fetchUser, async (req, res) => {
+    try {
+        const CustomerID = req.user; 
+        const { FoodItemID, Rating, Comment } = req.body;
+        // Insert the review into the database
+        const insertQuery = 'INSERT INTO FoodItemsReview (CustomerID, FoodItemID, Rating, Comment) VALUES (?, ?, ?, ?)';
+        const values = [CustomerID, FoodItemID, Rating, Comment];
+        pool.query(insertQuery, values, (error, results) => {
+            if (error) {
+                console.error('Error adding review:', error);
+                return res.status(500).json({ error: 'An error occurred while adding the review.' });
+            }
+            res.status(200).json({ message: 'Review added successfully.' });
+        });
+    } catch (error) {
+        console.error('Error adding review:', error);
+        res.status(500).json({ error: 'An error occurred while adding the review.' });
+    }
+});
+
+
+// GET request to fetch customer's review for a specific food item
+Router.get('/customerReviews/:foodItemId', async (req, res) => {
+    try {
+        const { foodItemId } = req.params;
+        console.log(foodItemId)
+        const query = `
+            SELECT 
+                FoodItemsReview.Rating, 
+                FoodItemsReview.Comment, 
+                CustomerImages.ImageData 
+            FROM 
+                FoodItemsReview 
+            INNER JOIN 
+                CustomerImages 
+            ON 
+                FoodItemsReview.CustomerID = CustomerImages.CustomerID 
+            WHERE 
+                FoodItemsReview.FoodItemID = ?`;
+        pool.query(query, [foodItemId], (error, results) => {
+            if (error) {
+                console.error('Error fetching customer reviews:', error);
+                return res.status(500).json({ error: 'An error occurred while fetching customer reviews.' });
+            }
+            res.status(200).json(results);
+        });
+    } catch (error) {
+        console.error('Error fetching customer reviews:', error);
+        res.status(500).json({ error: 'An error occurred while fetching customer reviews.' });
+    }
+});
 
 
 
@@ -342,6 +414,29 @@ Router.get('/my-addresses', fetchUser, (req, res) => {
         res.status(200).json(results);
     });
 });
+
+Router.delete('/remove-address/:id', fetchUser, (req, res) => {
+    const addressID = req.params.id;
+
+    if (!addressID || isNaN(addressID)) {
+        return res.status(400).json({ error: "Invalid address ID provided." });
+    }
+
+    const deleteQuery = 'DELETE FROM Addresses WHERE AddressID = ?';
+    pool.query(deleteQuery, [addressID], (error, results) => {
+        if (error) {
+            console.error("Error removing address:", error);
+            return res.status(500).json({ error: "An error occurred while removing the address." });
+        }
+
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ error: "Address not found." });
+        }
+
+        res.status(200).json({ message: "Address removed successfully." });
+    });
+});
+
 
 // Endpoint to fetch customer's orders
 Router.get('/my-orders', fetchUser, (req, res) => {

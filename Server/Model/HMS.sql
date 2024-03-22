@@ -9,13 +9,14 @@ CREATE TABLE Customers (
     LastName VARCHAR(255),
     Email VARCHAR(255) UNIQUE,
     Password VARCHAR(255),
-    Credits INT
+    Credits INT,
+    PhoneNumber VARCHAR(20) -- Added Phone Number to Customers Table
 );
 
 -- Create Admins Table
 CREATE TABLE Admins (
     AdminID INT AUTO_INCREMENT PRIMARY KEY,
-    UserName VARCHAR(255),
+    UserName VARCHAR(255) UNIQUE,
     Password VARCHAR(255)
 );
 
@@ -23,8 +24,11 @@ CREATE TABLE Admins (
 CREATE TABLE Addresses (
     AddressID INT AUTO_INCREMENT PRIMARY KEY,
     CustomerID INT,
-    Address VARCHAR(255),
-    PhoneNumber VARCHAR(20),
+    StreetAddress VARCHAR(255), -- Added Street Address
+    City VARCHAR(100), -- Added City
+    State VARCHAR(100), -- Added State
+    PostalCode VARCHAR(20), -- Added Postal Code
+    Country VARCHAR(100), -- Added Country
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
@@ -33,6 +37,7 @@ CREATE TABLE Reservations (
     ReservationID INT AUTO_INCREMENT PRIMARY KEY,
     CustomerID INT,
     ReservationDate DATE,
+    ReservationTime TIME, -- Added Time Attribute
     NoOfTables INT,
     Status VARCHAR(50) CHECK (Status IN ('Pending', 'Confirmed', 'Rejected')), 
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
@@ -43,6 +48,8 @@ CREATE TABLE Orders (
     OrderID INT AUTO_INCREMENT PRIMARY KEY,
     CustomerID INT,
     OrderDate DATE,
+    OrderTime TIME, -- Added Time Attribute
+    OrderNote VARCHAR(100),
     PaymentStatus VARCHAR(50) CHECK (PaymentStatus IN ('Pending', 'Confirmed', 'Rejected')),
     TotalAmount DECIMAL(10, 2),
     Status VARCHAR(50) CHECK (Status IN ('Pending', 'Confirmed', 'Rejected')),
@@ -52,11 +59,37 @@ CREATE TABLE Orders (
 -- Create FoodItems Table
 CREATE TABLE FoodItems (
     FoodItemID INT AUTO_INCREMENT PRIMARY KEY,
-    Name NVARCHAR(100) NOT NULL,
+    Title VARCHAR(255), -- Added Title
+    Subtitle VARCHAR(255), -- Added Subtitle
+    Description TEXT, -- Added Description
     Price DECIMAL(10, 2) NOT NULL,
-    Category NVARCHAR(50) NOT NULL,
-    AvailableQuantity INT NOT NULL,
-    FoodItemDiscount DECIMAL(5, 2) NOT NULL DEFAULT 0
+    Sizes JSON, -- Added Sizes (stored as JSON, can vary in size)
+    SpecialSelection JSON, -- Added Special Selection (stored as JSON, admin-defined options)
+    IsAvailable BOOLEAN DEFAULT 1,
+    FoodItemDiscount DECIMAL(5, 2) NOT NULL DEFAULT 0,
+    Category VARCHAR(255),
+    ImageURL JSON
+);
+
+CREATE TABLE Addons (
+    AddonID INT AUTO_INCREMENT PRIMARY KEY,
+    Title VARCHAR(255),
+    Subtitle VARCHAR(255),
+    Description TEXT,
+    Price DECIMAL(10, 2) NOT NULL,
+    ImageURL VARCHAR(255),
+    Size JSON
+);
+
+-- FoodItemsReview Table
+CREATE TABLE FoodItemsReview (
+    ReviewID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT,
+    FoodItemID INT,
+    Rating INT NOT NULL, -- Rating out of 5
+    Comment TEXT, -- Optional comment
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
+    FOREIGN KEY (FoodItemID) REFERENCES FoodItems(FoodItemID)
 );
 
 -- Create OrderItems Table
@@ -64,11 +97,15 @@ CREATE TABLE OrderItems (
     OrderItemID INT AUTO_INCREMENT PRIMARY KEY,
     OrderID INT,
     FoodItemID INT,
+    AddonID INT DEFAULT NULL, -- Added AddonID column with default NULL
     Quantity INT,
-    Subtotal DECIMAL(10, 2),
-    FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
-    FOREIGN KEY (FoodItemID) REFERENCES FoodItems(FoodItemID)
+    Subtotal DECIMAL(10, 2)
 );
+
+ALTER TABLE OrderItems
+ADD CONSTRAINT fk_order FOREIGN KEY (OrderID) REFERENCES Orders(OrderID),
+ADD CONSTRAINT fk_fooditem FOREIGN KEY (FoodItemID) REFERENCES FoodItems(FoodItemID),
+ADD CONSTRAINT fk_addon FOREIGN KEY (AddonID) REFERENCES Addons(AddonID);
 
 -- Create Feedback Table
 CREATE TABLE Feedback (
@@ -102,6 +139,23 @@ CREATE TABLE Complaints (
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
+-- Notifications Table
+CREATE TABLE Notifications (
+    NotificationID INT AUTO_INCREMENT PRIMARY KEY,
+    NotificationType VARCHAR(100) NOT NULL,
+    NotificationMessage TEXT NOT NULL,
+    IsPublic BOOLEAN NOT NULL DEFAULT 0, -- Indicates if the notification is public (visible to all) or private
+    CustomerID INT DEFAULT NULL, -- CustomerID will be NULL for public notifications
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
+
+-- AdminNotifications Table
+CREATE TABLE AdminNotifications (
+    NotificationID INT AUTO_INCREMENT PRIMARY KEY,
+    NotificationType ENUM('Order', 'Reservation', 'Complaint', 'Feedback') NOT NULL,
+    NotificationMessage TEXT NOT NULL
+);
+
 -- Create Report Table
 CREATE TABLE Report (
     ReportID INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,6 +165,16 @@ CREATE TABLE Report (
     PlacedOrdersToday INT,
     RevenueToday DECIMAL(10, 2)
 );
+
+CREATE TABLE CustomerImages (
+    ImageID INT AUTO_INCREMENT PRIMARY KEY,
+    CustomerID INT NOT NULL,
+    ImageData LONGBLOB NOT NULL,
+    UploadDate DATETIME NOT NULL,
+    FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
+);
+
+
 
 -- Create Trigger for Payment Table
 DELIMITER $$
@@ -313,110 +377,3 @@ BEGIN
 END //
 
 DELIMITER ;
-
-
-/*
-Set up a SQL Server Job to execute the stored procedure:
-
-Open SQL Server Management Studio (SSMS).
-
-In the Object Explorer, navigate to SQL Server Agent -> Jobs.
-
-Right-click on Jobs and select "New Job..."
-
-Provide a name for the job.
-
-Go to the "Steps" page, click "New," and add a new step.
-
-Set the "Type" to "Transact-SQL Script (T-SQL)."
-
-In the "Command" box, enter the following T-SQL script:
-
-*/
-EXEC UpdateReport;
-
--- Insert data into Customers table using the procedure
-EXEC InsertCustomer
-	@CustomerID =2,
-    @FirstName = 'John',
-    @LastName = 'Doe',
-    @Email = 'john.doe@example.com',
-    @Password = 'password123',
-    @Credits = 100;
-
--- Insert data into Admins table using the procedure
-EXEC InsertAdmin
-	@AdminID = 2,
-    @UserName = 'admin1',
-    @Password = 'adminpassword';
-
--- Insert data into Addresses table using the procedure
-EXEC InsertAddress
-	@AddressID = 2,
-    @CustomerID = 2,
-    @Address = '123 Main Street',
-    @PhoneNumber = '123-456-7890';
-
--- Insert data into Reservations table using the procedure
-EXEC InsertReservation
-    @ReservationID = 4,
-    @CustomerID = 2,
-    @ReservationDate = '2024-02-10',
-    @NoOfTables = 3,
-    @Status = 'Pending';
-
--- Insert data into Orders table using the procedure
-EXEC InsertOrder
-    @OrderID = 129,
-    @CustomerID = 14,
-    @OrderDate = '2024-02-10',
-    @PaymentStatus = 'Confirmed',
-    @TotalAmount = 50.00,
-    @Status = 'Confirmed';
-
--- Insert data into FoodItems table using the procedure
-EXEC InsertFoodItem
-    @Name = 'Pizza',
-    @Price = 12.99,
-    @Category = 'Main Dish',
-    @AvailableQuantity = 20,
-    @FoodItemDiscount = 0.1;
-
--- Insert data into OrderItems table using the procedure
-EXEC InsertOrderItem
-    @OrderItemID = 1,
-    @OrderID = 1,
-    @FoodItemID = 1,
-    @Quantity = 2,
-    @Subtotal = 25.98;
-
--- Insert data into Feedback table using the procedure
-EXEC InsertFeedback
-    @CustomerID = 2,
-    @ServiceRating = 4,
-    @FoodRating = 5,
-    @Comment = 'Great service and delicious food!';
-
--- Insert data into Payments table using the procedure
-EXEC InsertPayment
-    @PaymentID = 1,
-    @OrderID = 1,
-    @CustomerID = 2,
-    @Amount = 50.00,
-    @PaymentDate = '2024-02-10 12:30:00';
-
-
--- Insert a complaint
-EXEC InsertComplaint
-    @CustomerID = 2,
-    @ComplaintType = 'Food',
-    @ComplaintText = 'The pizza was burnt and the pasta was undercooked.';
-
--- Update the status of a complaint (mark as resolved)
-EXEC UpdateComplaintStatus
-    @ComplaintID = 1,
-    @IsResolved = 1;
-
-
-
-

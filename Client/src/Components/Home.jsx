@@ -5,7 +5,9 @@ import Cookies from 'js-cookie';
 import { Button } from 'react-bootstrap';
 import StarRatings from 'react-star-ratings';
 import PaginationComponent from './PaginationComponent';
+import { toast } from 'react-toastify'
 
+import { Modal } from 'react-bootstrap'; // Assuming you're using React Bootstrap components
 
 
 function Home() {
@@ -41,7 +43,7 @@ function Home() {
 
     // Logic to change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  
+
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
     };
@@ -50,6 +52,15 @@ function Home() {
         setSelectedItem(item);
         setSidebarOpen(false);
     };
+
+    const [showModal, setShowModal] = useState(false);
+
+    const [editedUserDetails, setEditedUserDetails] = useState({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: ''
+    });
 
 
 
@@ -88,7 +99,7 @@ function Home() {
         fetch(`${localhost}/api/my-complaints`, { headers })
             .then(response => response.json())
             .then(data => {
-                console.log('complaints data:', data);
+                // console.log('complaints data:', data);
                 setComplaints(data)
             })
             .catch(error => console.error('Error fetching complaints:', error));
@@ -96,10 +107,11 @@ function Home() {
         fetch(`${localhost}/api/my-payments`, { headers })
             .then(response => response.json())
             .then(data => {
-                console.log('Payments data:', data); // Log the payments data
+                // console.log('Payments data:', data); // Log the payments data
                 setPayments(data.payments);
             })
             .catch(error => console.error('Error fetching payments:', error));
+
     }, []);
 
     if (isDarkMode) {
@@ -107,6 +119,8 @@ function Home() {
     } else {
         document.body.style.backgroundColor = 'white';
     }
+
+    console.log(userDetails)
 
 
     const handleImageChange = (e) => {
@@ -162,12 +176,109 @@ function Home() {
     };
 
 
+    // Define the fetchCustomerDetails function
+    const fetchCustomerDetails = async () => {
+        try {
+            const token = Cookies.get('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `${token}`
+            };
+
+            const response = await fetch(`${localhost}/api/getCustomer`, { headers });
+            const data = await response.json();
+            // console.log("data",data)
+            // setUserDetails(data);
+            setEditedUserDetails({
+                firstName: data.FirstName,
+                lastName: data.LastNamea,
+                email: data.Email,
+                phoneNumber: data.PhoneNumber
+            });
+        } catch (error) {
+            console.error('Error fetching Customer:', error);
+        }
+    };
+
+    // Call fetchCustomerDetails inside useEffect
+    useEffect(() => {
+        fetchCustomerDetails();
+        // Other fetch calls...
+    }, []);
+
+
+    const handleShowModal = () => {
+        setEditedUserDetails(userDetails); // Set initial values to the current user details
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+    };
+
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setEditedUserDetails({
+            ...editedUserDetails,
+            [name]: value
+        });
+    };
+
+    const handleSaveChanges = async () => {
+        try {
+            const token = Cookies.get('token')
+            const response = await fetch(`${localhost}/api/updateUser`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${token}`
+
+                },
+                body: JSON.stringify(editedUserDetails)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update user details');
+            }
+
+            setShowModal(false); // Close the modal after saving changes
+        } catch (error) {
+            console.error('Error updating user:', error);
+            // Handle error scenario, e.g., show an error message to the user
+        }
+    };
+
+    const removeAddress = (addressID) => {
+        const token = Cookies.get('token'); // Assuming you're using cookies to store the token
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': token
+        };
+
+        fetch(`${localhost}/api/remove-address/${addressID}`, {
+            method: 'DELETE',
+            headers: headers
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to remove address');
+                }
+                console.log('Address removed successfully');
+                // After successfully removing the address, refetch the addresses
+                toast.success("Address Removed")
+            })
+            .catch(error => {
+                console.error('Error removing address:', error); // Log error message
+            });
+    };
+
+
     return (
         <div>
             <div className="container-fluid ">
                 <div className="row CustomMarginTop"  >
                     <div className={`col-md-3 sidebar ${sidebarOpen ? 'open' : 'closed'} bg-${isDarkMode ? "dark" : "light"}`}>
-                        <Button className="toggle-btn  " onClick={toggleSidebar}>
+                        <Button className="toggle-btn mt-5 " onClick={toggleSidebar}>
                             {sidebarOpen ? <i className="fa-solid fa-xmark"></i> : <i className="fa-solid fa-arrow-right-from-bracket"></i>}
 
                         </Button>
@@ -255,6 +366,14 @@ function Home() {
                                                                 <input type="text" className="form-control" value={userDetails.Email} />
                                                             </div>
                                                         </div>
+                                                        <div className="row mb-3">
+                                                            <div className="col-sm-3">
+                                                                <h6 className="mb-0">Phone Number</h6>
+                                                            </div>
+                                                            <div className="col-sm-9 text-secondary">
+                                                                <input type="text" className="form-control" value={userDetails.PhoneNumber} />
+                                                            </div>
+                                                        </div>
 
                                                         <div className="row mb-3">
                                                             <div className="col-sm-3">
@@ -268,7 +387,7 @@ function Home() {
                                                         <div className="row">
                                                             <div className="col-sm-3"></div>
                                                             <div className="col-sm-9 text-secondary">
-                                                                <input type="button" className="btn btn-primary px-4" value="Save Changes" />
+                                                                <input type="button" className="btn btn-primary px-4" value="Edit" onClick={handleShowModal} />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -278,13 +397,20 @@ function Home() {
                                                         <div className={`card p-2 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}   align-items-center d-flex flex-column`}>
                                                             <div className="row mt-5">
                                                                 {Array.isArray(addresses) && addresses.slice(startIndex, endIndex).map(address => (
-                                                                    <div key={address.id} className="col-lg-4 mb-4">
+                                                                    <div key={address.AddressID} className="col-lg-4 mb-4">
                                                                         <div className={`card bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  shadow-lg  `}>
                                                                             <div className="card-body">
-                                                                                <h5 className="card-title">Phone Number: {address.PhoneNumber}</h5>
-                                                                                <p className="card-text">Address: {address.Address}</p>
-                                                                                <button className="btn btn-primary me-2">Edit</button>
-                                                                                <button className="btn btn-danger">Remove</button>
+                                                                                <h5 className="card-title fs-6">Street: <small> {address.StreetAddress}</small> </h5>
+                                                                                <div className="d-flex gap-2" >
+                                                                                    <p className="card-text">City: {address.City}</p>
+                                                                                    <p className="card-text">State: {address.State}</p>
+                                                                                </div>
+                                                                                <div className="d-flex gap-2">
+                                                                                    <p className="card-text">PostalCode: {address.PostalCode}</p>
+                                                                                    <p className="card-text">Country: {address.Country}</p>
+                                                                                </div>
+                                                                                {/* <button className="btn btn-primary me-2">Edit</button> */}
+                                                                                <button className="btn btn-danger" onClick={() => removeAddress(address.AddressID)}>Remove</button>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -299,6 +425,56 @@ function Home() {
                                                     </div>
                                                 </div>
                                             </div>
+                                            <Modal show={showModal} onHide={handleCloseModal}>
+                                                <Modal.Header closeButton>
+                                                    <Modal.Title>Edit User Details</Modal.Title>
+                                                </Modal.Header>
+                                                <Modal.Body>
+                                                    <div className="row mb-3">
+                                                        <div className="card-body">
+                                                            <div className="row mb-3">
+                                                                <div className="col-sm-3">
+                                                                    <h6 className="mb-0">Full Name</h6>
+                                                                </div>
+                                                                <div className="col-sm-9 text-secondary">
+                                                                    <input type="text" className="form-control" name="FirstName" value={editedUserDetails.FirstName} onChange={handleInputChange} />
+                                                                </div>
+                                                            </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-sm-3">
+                                                                    <h6 className="mb-0">Last Name</h6>
+                                                                </div>
+                                                                <div className="col-sm-9 text-secondary">
+                                                                    <input type="text" className="form-control" name="LastName" value={editedUserDetails.LastName} onChange={handleInputChange} />
+                                                                </div>
+                                                            </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-sm-3">
+                                                                    <h6 className="mb-0">Email</h6>
+                                                                </div>
+                                                                <div className="col-sm-9 text-secondary">
+                                                                    <input type="text" className="form-control" name="Email" value={editedUserDetails.Email} onChange={handleInputChange} />
+                                                                </div>
+                                                            </div>
+                                                            <div className="row mb-3">
+                                                                <div className="col-sm-3">
+                                                                    <h6 className="mb-0">Phone Number</h6>
+                                                                </div>
+                                                                <div className="col-sm-9 text-secondary">
+                                                                    <input type="text" className="form-control" name="PhoneNumber" value={editedUserDetails.PhoneNumber} onChange={handleInputChange} />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {/* Add similar input fields for other user details */}
+                                                </Modal.Body>
+
+
+                                                <Modal.Footer>
+                                                    <Button variant="secondary" onClick={handleCloseModal}>Close</Button>
+                                                    <Button variant="primary" onClick={handleSaveChanges}>Save Changes</Button>
+                                                </Modal.Footer>
+                                            </Modal>
                                         </div>
                                     </div>
                                 </div>

@@ -84,6 +84,7 @@ const Cart = () => {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     };
 
+    const [orderNote, setorderNote] = useState([])
 
     const handleOrderSubmit = async () => {
         try {
@@ -107,6 +108,7 @@ const Cart = () => {
                         })),
                         paymentStatus: 'Pending',
                         status: 'Pending',
+                        orderNote: orderNote
                     }),
                 });
 
@@ -183,19 +185,68 @@ const Cart = () => {
         }
     };
 
-   useEffect(() => {
-    return () => {
-        if(!Cookies.get('token')){
-            navigate('/')
+    useEffect(() => {
+        return () => {
+            if (!Cookies.get('token')) {
+                navigate('/')
+            }
+        };
+    })
+
+
+
+
+    const [streetAddress, setStreetAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [country, setCountry] = useState('');
+
+
+    const handleConfirmAddress = async () => {
+        const addressData = {
+            streetAddress: streetAddress,
+            city: city,
+            state: state,
+            postalCode: postalCode,
+            country: country,
+        };
+
+        try {
+            const token = Cookies.get('token')
+            const response = await fetch('http://localhost:4000/api/addAddress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${token}`
+                },
+                body: JSON.stringify(addressData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to add address');
+            }
+
+            // Reset input fields after successful submission
+            setStreetAddress('');
+            setCity('');
+            setState('');
+            setPostalCode('');
+            setCountry('');
+
+            toast("Address Added Successfully")
+        } catch (error) {
+            console.error('Error adding address:', error);
+            // Handle error appropriately (e.g., show error message)
         }
     };
-   })
+
 
     return (
         <>
             <ToastContainer />
             <div className="mt-5 container pt-5">
-            {/* this part is the cart section show the cart details  */}
+                {/* this part is the cart section show the cart details  */}
                 <div className={`p-5 card rounded-2 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} mt-5 pt-5 `}>
                     <div className="container">
                         <h2 className={`text-center mb-4  text-${isDarkMode ? 'light' : 'dark'}`}>Your <i className="fa-solid fa-cart-shopping text-success"></i> has <span className='text-warning' >{cartItems.length}</span> Items</h2>
@@ -203,7 +254,7 @@ const Cart = () => {
                             <div key={index} className="card  mb-4" style={{ borderRadius: '15px' }}>
                                 <div className="card-body  ">
                                     <div className="d-flex mt-2 mt-md- flex-column flex-md-row justify-content-between align-items-center">
-                                        <h3>{item.Name}</h3>
+                                        <h3>{item.Title}</h3>
                                         <button className="btn btn-outline-danger btn-sm" onClick={() => handleRemove(index)}>Remove</button>
                                     </div>
                                     <div className="d-flex justify-content-between align-items-center mt-2 d-flex flex-column flex-md-row mt-2 mt-md- ">
@@ -249,23 +300,59 @@ const Cart = () => {
                             </div>
                         </div>
                         <div className="mt-4">
-                            <div className={`card mb-3 bg-${isDarkMode ? 'dark': 'light'} text-${isDarkMode ? 'light': 'dark'}  `}>
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
                                 <div className="card-body">
                                     <h5 className="card-title">Address</h5>
                                     <select
                                         className="form-select"
-                                        value={currentAddress}
+                                        value={currentAddress.AddressID}
                                         onChange={(e) => setCurrentAddress(e.target.value)}
                                     >
-                                        <option value="" className='light-mode '>Select an address</option>
                                         {addresses.map((address, index) => (
-                                            <option key={index} value={address.Address}>{address.Address}</option>
+                                            <option key={index} value={address.AddressID}>
+                                                {`${address.StreetAddress}, ${address.City}, ${address.State}, ${address.PostalCode}, ${address.Country}`}
+                                            </option>
                                         ))}
                                     </select>
+                                    <button className="btn btn-danger mt-4 btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page" onClick={handleConfirmAddress}>
+                                        Add New Address
+                                    </button>
+                                </div>
+                            </div>
+                            {/* address modal  */}
+                            <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                <div className="modal-dialog">
+                                    <div className={`modal-content bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
+                                        <div className="modal-header">
+                                            <h1 className="modal-title fs-5" id="exampleModalLabel">Add New Address</h1>
+                                            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div className="modal-body">
+                                            <div className="d-flex flex-column">
+                                                <label htmlFor="streetAddress">Street Address:</label>
+                                                <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} required={true} />
+                                                <label htmlFor="city">City:</label>
+                                                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} required={true} />
+                                                <label htmlFor="state">State:</label>
+                                                <input type="text" value={state} onChange={(e) => setState(e.target.value)} required={true} />
+                                                <label htmlFor="postalCode">Postal Code:</label>
+                                                <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required={true} />
+                                                <label htmlFor="country">Country:</label>
+                                                <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} required={true} />
+                                            </div>
+                                        </div>
+
+
+                                        <div className="modal-footer">
+                                            <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="button" className="btn btn-primary" onClick={handleConfirmAddress}>Confirm Address</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className={`card mb-3 bg-${isDarkMode ? 'dark': 'light'} text-${isDarkMode ? 'light': 'dark'}  `}>
+
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
                                 <div className="card-body">
                                     <h5 className="card-title">Payment Option</h5>
                                     <div className="form-check">
@@ -278,6 +365,16 @@ const Cart = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
+                                <div className="card-body d-flex flex-column">
+                                    <label htmlFor="orderNote" className='card-title fw-bold '>Any Instructions</label>
+                                    <TextField type="text" className='input-group rounded-2 border-0 mt-2 '
+                                        name="orderNote"
+                                        id="orderNote"
+                                        value={orderNote}
+                                        onChange={(e) => setorderNote(e.target.value)} />
+                                </div>
+                            </div>
                         </div>
                         {cartItems.length > 0 && (
                             <div className="text-center mt-4">
@@ -287,17 +384,17 @@ const Cart = () => {
                     </div>
 
                 </div>
-                    {/* This dilogue box show the summary for the order that is going to be placed  */}
+                {/* This dilogue box show the summary for the order that is going to be placed  */}
                 <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                     <DialogTitle>Order Summary</DialogTitle>
                     <DialogContent>
                         <div>
                             <h4>Selected Address:</h4>
-                            <p>{currentAddress}</p>
+                            {/* <p>{currentAddress}</p> */}
                         </div>
                         <div>
                             <h4>Payment Method:</h4>
-                            <p>{paymentMethod}</p>
+                            {/* <p>{paymentMethod}</p> */}
                         </div>
                         <table className="table">
                             <thead>

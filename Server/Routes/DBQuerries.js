@@ -1,5 +1,6 @@
 const express = require('express');
 const { mssql, pool, sql } = require('../db/db');
+const fetchUser = require('../middlewares/fetchCustomer');
 const Router = express.Router();
 
 // Endpoint to update reservation status
@@ -295,40 +296,55 @@ Router.post('/insertPayment', (req, res) => {
 
 // Endpoint to update food items
 Router.put('/updateFoodItem/:id', (req, res) => {
-    try {
+  try {
       const { id } = req.params;
-      const { Name, Price, Category, AvailableQuantity, FoodItemDiscount } = req.body;
-  
+      const { title, subtitle, description, price, sizes, specialSelection, isAvailable, foodItemDiscount, category } = req.body;
+
       // Check if all required fields are present
-      if (!Name || !Price || !Category || !AvailableQuantity || !FoodItemDiscount) {
-        return res.status(400).json({ error: "All fields are required." });
+      if (!title || !subtitle || !description || !price || !sizes || !specialSelection || isAvailable === undefined || isAvailable === null || !foodItemDiscount || !category) {
+          return res.status(400).json({ error: "All fields are required." });
       }
-  
+
+      // Validate price
+      if (isNaN(price) || price <= 0) {
+          return res.status(400).json({ error: "Price must be a valid number greater than zero." });
+      }
+
+      // Serialize arrays into strings
+      const sizesString = JSON.stringify(sizes);
+      const specialSelectionString = JSON.stringify(specialSelection);
+
+      // Update the food item in the database
       const query = `
-        UPDATE FoodItems 
-        SET 
-          Name = ?,
-          Price = ?,
-          Category = ?,
-          AvailableQuantity = ?,
-          FoodItemDiscount = ?
-        WHERE 
-          FoodItemID = ?;
+          UPDATE FoodItems 
+          SET 
+              Title = ?,
+              Subtitle = ?,
+              Description = ?,
+              Price = ?,
+              Sizes = ?,
+              SpecialSelection = ?,
+              IsAvailable = ?,
+              FoodItemDiscount = ?,
+              Category = ?
+          WHERE 
+              FoodItemID = ?;
       `;
-  
-      pool.query(query, [Name, Price, Category, AvailableQuantity, FoodItemDiscount, id], (error, results) => {
-        if (error) {
-          console.error("Error updating food item:", error);
-          res.status(500).json({ error: "An error occurred while updating food item." });
-        } else {
-          res.status(200).json({ message: "Food item updated successfully." });
-        }
+
+      pool.query(query, [title, subtitle, description, price, sizesString, specialSelectionString, isAvailable, foodItemDiscount, category, id], (error, results) => {
+          if (error) {
+              console.error("Error updating food item:", error);
+              res.status(500).json({ error: "An error occurred while updating food item." });
+          } else {
+              res.status(200).json({ message: "Food item updated successfully." });
+          }
       });
-    } catch (error) {
+  } catch (error) {
       console.error("Error updating food item:", error);
       res.status(500).json({ error: "An error occurred while updating food item." });
-    }
-  });
+  }
+});
+
 
 // Endpoint to update reservation status by ID
 Router.put('/updateReservationStatus/:id', (req, res) => {
@@ -362,5 +378,49 @@ Router.get('/getFeedback/:customerID', (req, res) => {
       }
     });
   });
+
+
+
+// Update an address
+Router.put('/updateAddress/:addressID', fetchUser, async (req, res) => {
+  const { streetAddress, city, state, postalCode, country } = req.body;
+  const customerID = req.user;
+  const addressID = req.params.addressID;
+
+  try {
+      // Check for missing fields
+      if (!streetAddress || !city || !state || !postalCode || !country) {
+          return res.status(400).json({ error: "Missing required fields in the request body." });
+      }
+
+      const query = `UPDATE Addresses 
+                     SET StreetAddress=?, City=?, State=?, PostalCode=?, Country=?
+                     WHERE AddressID=? AND CustomerID=?`;
+      await pool.promise().query(query, [streetAddress, city, state, postalCode, country, addressID, customerID]);
+
+      res.status(200).json({ message: "Address updated successfully." });
+  } catch (error) {
+      console.error("Error updating address:", error);
+      res.status(500).json({ error: "An error occurred while updating the address." });
+  }
+});
+
+// Remove an address
+Router.delete('/removeAddress/:addressID', fetchUser, async (req, res) => {
+  const customerID = req.user;
+  const addressID = req.params.addressID;
+
+  try {
+      const query = `DELETE FROM Addresses 
+                     WHERE AddressID=? AND CustomerID=?`;
+      await pool.promise().query(query, [addressID, customerID]);
+
+      res.status(200).json({ message: "Address removed successfully." });
+  } catch (error) {
+      console.error("Error removing address:", error);
+      res.status(500).json({ error: "An error occurred while removing the address." });
+  }
+});
+
 
 module.exports = Router;

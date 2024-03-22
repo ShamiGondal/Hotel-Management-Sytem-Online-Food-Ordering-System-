@@ -17,6 +17,7 @@ import { useDarkMode } from './Hooks/DarkModeContext';
 import Cart from './Cart';
 import FoodLoader from './FoodLoader';
 import { useCartContext } from './Hooks/useCart';
+import Cookies from 'js-cookie';
 
 
 
@@ -25,26 +26,35 @@ function DisplayingFoodItems() {
     //TODO : Need to change button to remove from cart after adding to card , 
     //TODO: Have to fetch the last three prev order of customer and display them , for that need to understand the orderTables in database
     //TODO : Main issue of ceatogries buttons are not working , even not getting properly displayed
-    const dispatch = useDispatch();
-    const foodItems = useSelector(state => state.foodItems.items);
+
     // const loading = useSelector(state => state.foodItems.loading);
     // const error = useSelector(state => state.foodItems.error);
     const [isLoading, setIsLoading] = useState(true);
     const { isDarkMode } = useDarkMode();
     const { addToCart } = useCartContext();
+    const [foodItems, setFoodItems] = useState([]);
+
+    useEffect(() => {
+        fetch('http://localhost:4000/api/getFoodItems')
+            .then(response => response.json())
+            .then(data => setFoodItems(data))
+            .catch(error => console.error('Error fetching food items:', error));
+        setIsLoading(false);
+        console.log(foodItems)
+    }, []);
 
 
 
 
     const navigate = useNavigate();
-    useEffect(() => {
-        dispatch(fetchFoodItemsStart());
-        fetch('http://localhost:4000/api/getFoodItems')
-            .then(response => response.json())
-            .then(data => dispatch(fetchFoodItemsSuccess(data)))
-            .catch(error => dispatch(fetchFoodItemsFailure(error.message)));
-        setIsLoading(false)
-    }, [dispatch]);
+    // useEffect(() => {
+    //     dispatch(fetchFoodItemsStart());
+    //     fetch('http://localhost:4000/api/getFoodItems')
+    //         .then(response => response.json())
+    //         .then(data => dispatch(fetchFoodItemsSuccess(data)))
+    //         .catch(error => dispatch(fetchFoodItemsFailure(error.message)));
+    //     setIsLoading(false)
+    // }, [dispatch]);
 
     const getUniqueCategories = () => {
         const uniqueCategories = [];
@@ -118,14 +128,37 @@ function DisplayingFoodItems() {
         navigate('/FoodMenu')
     }
 
+    const [recentOrders, setRecentOrders] = useState([]);
 
+    useEffect(() => {
+        // Fetch recent orders from the backend
+        async function fetchRecentOrders() {
+            try {
+                // Include the token in the request headers
+                const token = Cookies.get('token'); // Replace 'your_token_here' with your actual token
+                const response = await fetch('http://localhost:4000/api/my-recent-orders', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+                const data = await response.json();
+                setRecentOrders(data.recentOrders);
+                console.log(recentOrders)
+            } catch (error) {
+                console.error('Error fetching recent orders:', error);
+            }
+        }
+
+        fetchRecentOrders();
+    }, []);
     return (
         <>
 
             <div className={`food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
                 <div id="carouselExample" className="carousel slide" data-bs-ride="carousel" data-bs-interval="3000">
                     <div className="carousel-inner">
-                        <div className={`carousel-item active text-center text-${isDarkMode ? 'light': 'dark'} `}>
+                        <div className={`carousel-item active text-center text-${isDarkMode ? 'light' : 'dark'} `}>
                             <img src={image1} className="d-block w-100" alt="Slide 1" />
                             <div className="carousel-caption d-none d-md-block position-absolute top-50 start-50 translate-middle  h-25 rounded-3    ">
                                 <h1 className={`animate__animated animate__backInLeft fs-1 fw-bolder  `}>Pakistani Kahnoo ki kia baat ha!</h1>
@@ -171,7 +204,7 @@ function DisplayingFoodItems() {
                             <button className='mt-3  text-danger  bg-transparent border-0  border fw-medium ' onClick={handleseeCetogries}>see all Cetogries </button>
                         </div>
                         <div className=" d-flex position-relative justify-content-between  ">
-                        <div className="navigation_left d-none d-md-block">
+                            <div className="navigation_left d-none d-md-block">
                                 <button className="btn btn-light bg-transparent border-0 " onClick={handlePrevious}><i className="fa-solid fa-circle-chevron-left text-danger fs-3"></i></button>
                             </div>
                             <div className="container category-carousel">
@@ -198,44 +231,29 @@ function DisplayingFoodItems() {
                             </div>
                         </div>
 
-                        <div className="container mt-5 mb-3">
+                        {recentOrders && recentOrders.length > 0 ? (<div className="container mt-5 mb-3">
                             <div className=" d-md-flex justify-content-between align-items-center">
                                 <h4 className='fw-medium'>Your Previous Orders</h4>
                                 <button className='text-danger bg-transparent border-0 border fw-medium' onClick={pastOrdershandle}>See All Past Orders</button>
                             </div>
-                            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 mt-3">
-                                <div className="col mb-3">
-                                    <div className={`card bg-${isDarkMode ? 'dark': 'light' } text-${isDarkMode ? 'light': 'dark'}  `} style={{ width: "17rem" }}>
-                                        <img className="card-img-top " src={image1} alt="Card image cap" />
-                                        <div className="card-body">
-                                            <h5 className="card-title">Italian Chicken Pizza</h5>
-                                            <p className="card-text">Italian Crust , 2-Drinks</p>
-                                            <a href="#" className="btn btn-primary btn-sm">Re-Order</a>
+                            <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-3 ">
+                                {recentOrders.map((order, index) => (
+                                    <div key={index} className="col mb-3">
+                                        <div className={`card bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `} style={{ width: "17rem" }}>
+                                            <img className="card-img-top" src={order.ImageURL} alt="Card image cap" />
+                                            <div className="card-body">
+                                                <h5 className="card-title">{order.Title}</h5>
+                                                <p className="card-text">{order.Subtitle}</p>
+                                                <p className="card-text">Price: ${order.Price}</p>
+                                                <button onClick={() => addToCart(order)} className="btn btn-primary btn-sm">Re-Order</button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="col">
-                                    <div className={`card bg-${isDarkMode ? 'dark': 'light' } text-${isDarkMode ? 'light': 'dark'}  `} style={{ width: "17rem" }}>
-                                        <img className="card-img-top" src={image2} alt="Card image cap" />
-                                        <div className="card-body">
-                                            <h5 className="card-title">Kabab Chicken Pizza</h5>
-                                            <p className="card-text">Italian Crust , 2-Drinks</p>
-                                            <a href="#" className="btn btn-primary btn-sm">Re-Order</a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="col">
-                                    <div className={`card bg-${isDarkMode ? 'dark': 'light' } text-${isDarkMode ? 'light': 'dark'} `} style={{ width: "17rem" }}>
-                                        <img className="card-img-top" src={image3} alt="Card image cap" />
-                                        <div className="card-body">
-                                            <h5 className="card-title">Papporni Chicken Pizza</h5>
-                                            <p className="card-text">Italian Crust , 2-Drinks</p>
-                                            <a href="#" className="btn btn-primary btn-sm">Re-Order</a>
-                                        </div>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
-                        </div>
+                        </div>) : (
+                            <div className=""></div>
+                        )}
 
                         <div className="container mt-5">
                             <div className="d-flex justify-content-between align-items-center">
@@ -278,15 +296,15 @@ function DisplayingFoodItems() {
                                 <div className="col-12 col-md-9">
                                     <div className="container">
                                         <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 g-4">
-                                            {foodItems && foodItems.slice(0, 6).map((foodItem, index) => (
+                                            {foodItems.slice(0, 6).map((foodItem, index) => (
                                                 <button
                                                     className="border-0 bg-transparent"
                                                     onClick={() => showDetails(foodItem)}
                                                     key={foodItem.FoodItemID}
                                                     style={{ position: 'relative', zIndex: 1 }}
                                                 >
-                                                    <div className={`card rounded-2 position-relative bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container text-${isDarkMode ? 'light' : 'dark'}`}>
-                                                        <img className="card-img-top  rounded-top" src={items[index % images.length]} alt="Card image cap" />
+                                                    <div className={`card  position-relative  rounded-2 bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
+                                                        <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
                                                         <div className="position-absolute d-flex justify-content-between w-100">
                                                             <div className="bg-danger ms-2 p-1 pt-2 fs-6 fw-medium text-black bg-opacity-100 ">{foodItem.FoodItemDiscount}%</div>
                                                             <div className=" p-2 fs-5 fw-lighter bg-opacity-10 text-white"><i className="fa-solid fa-heart"></i></div>
@@ -294,17 +312,17 @@ function DisplayingFoodItems() {
 
                                                         <div className="card-body d-flex flex-column justify-content-between">
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Name}</h5>
+                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Title}</h5>
                                                                 <h5 className="bg-success p-1 fs-6 fw-lighter bg-opacity-100 text-white">4.1</h5>
                                                             </div>
                                                             <div className="d-flex">
-                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>American Food, Fast Food</p>
+                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>{foodItem.Subtitle}</p>
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
                                                                 <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>${foodItem.Price}</h5>
                                                                 <Rating
                                                                     readonly
-                                                                    className='text-${isDarkMode? "success": "success" }'
+                                                                    className={`text-${isDarkMode ? "success" : "warning"}`}
                                                                     initialRating="4"
                                                                     emptySymbol={<i className="far fa-star"></i>}
                                                                     fullSymbol={<i className="fas fa-star"></i>}
@@ -315,7 +333,7 @@ function DisplayingFoodItems() {
                                                             </div>
                                                         </div>
                                                         <div className="card-footer" style={{ zIndex: 2 }}>
-                                                            <button className="btn btn-warning btn-sm btn-hover z-3" onClick={() => handleAddToCart(foodItem)}>
+                                                            <button className="btn btn-warning btn-sm z-3" onClick={() => handleAddToCart(foodItem)}>
                                                                 Add to Bucket
                                                             </button>
                                                         </div>
@@ -332,7 +350,7 @@ function DisplayingFoodItems() {
                                 <div className="col-12 col-md-9">
                                     <div className="container">
                                         <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 g-4">
-                                            {foodItems.slice(0, 6).map((foodItem, index) => (
+                                            {foodItems.slice(6, 19).map((foodItem, index) => (
                                                 <button
                                                     className="border-0 bg-transparent"
                                                     onClick={() => showDetails(foodItem)}
@@ -340,7 +358,7 @@ function DisplayingFoodItems() {
                                                     style={{ position: 'relative', zIndex: 1 }}
                                                 >
                                                     <div className={`card  position-relative  rounded-2 bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
-                                                        <img className="card-img-top rounded-top" src={items[index % images.length]} alt="Card image cap" />
+                                                        <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
                                                         <div className="position-absolute d-flex justify-content-between w-100">
                                                             <div className="bg-danger ms-2 p-1 pt-2 fs-6 fw-medium text-black bg-opacity-100 ">{foodItem.FoodItemDiscount}%</div>
                                                             <div className=" p-2 fs-5 fw-lighter bg-opacity-10 text-white"><i className="fa-solid fa-heart"></i></div>
@@ -348,17 +366,17 @@ function DisplayingFoodItems() {
 
                                                         <div className="card-body d-flex flex-column justify-content-between">
                                                             <div className='d-flex justify-content-between'>
-                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Name}</h5>
+                                                                <h5 className={`card-title fs-6  fw-light text-${isDarkMode ? 'light' : 'dark'}`}>{foodItem.Title}</h5>
                                                                 <h5 className="bg-success p-1 fs-6 fw-lighter bg-opacity-100 text-white">4.1</h5>
                                                             </div>
                                                             <div className="d-flex">
-                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>American Food, Fast Food</p>
+                                                                <p className={`text-${isDarkMode ? 'light' : 'dark'} fw-lighter`} style={{ fontSize: "14px" }}>{foodItem.Subtitle}</p>
                                                             </div>
                                                             <div className='d-flex justify-content-between'>
                                                                 <h5 className={`card-title fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-light `}>${foodItem.Price}</h5>
                                                                 <Rating
                                                                     readonly
-                                                                    className='text-${isDarkMode? "success": "success" }'
+                                                                    className={`text-${isDarkMode ? "success" : "warning"}`}
                                                                     initialRating="4"
                                                                     emptySymbol={<i className="far fa-star"></i>}
                                                                     fullSymbol={<i className="fas fa-star"></i>}

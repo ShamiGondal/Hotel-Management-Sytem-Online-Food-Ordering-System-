@@ -21,27 +21,32 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
 
 const Navbar = () => {
 
     //TODO : HAVE TO UPDATE THE DELIVERY BUTOON FUNCTIONALITY FOR NOW EVERYTIME IT TAKES ADDRESS BUT NEED TO UPDATE IT
-    
+
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [selectedMenuItem, setSelectedMenuItem] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(!!Cookies.get('token'));
     const [isChecked, setIsChecked] = useState(false);
     const navigate = useNavigate();
-    const [Room, setRoom] = useState('');
-    const [Street, setStreet] = useState('');
-    const [PhoneNumber, setPhoneNumber] = useState('');
     const [userDetails, setUserDetails] = useState({});
-    const [position, setPosition] = useState(null);
     const localhost = `http://localhost:4000`
     const { cartItems } = useCartContext();
     const [imageSrc, setImageSrc] = useState('');
     const { isDarkMode, toggleDarkMode, isDrawerDarkMode, setIsDrawerDarkMode } = useDarkMode();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    
+    const [streetAddress, setStreetAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [country, setCountry] = useState('');
+    const [imageUpdated, setImageUpdated] = useState(false);
+
     useEffect(() => {
         setIsDrawerDarkMode(isDarkMode);
     }, [isDarkMode, setIsDrawerDarkMode]);
@@ -92,26 +97,63 @@ const Navbar = () => {
     }
 
 
-    useEffect(() => {
-        const fetchImage = async () => {
-            try {
-                const token = Cookies.get('token')
-                const response = await fetch('http://localhost:4000/api/my-Image', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `${token}`
-                    }
-                }); // Assuming user ID is 1
-                const blob = await response.blob();
-                const imageUrl = URL.createObjectURL(blob);
-                setImageSrc(imageUrl);
-            } catch (error) {
-                console.error('Error fetching image:', error);
-            }
-        };
 
-        fetchImage();
+    useEffect(() => {
+        const fetchToken = () => {
+            const token = Cookies.get('token');
+            setIsLoggedIn(!!token); // Update isLoggedIn based on the presence of token
+
+        }
+        fetchToken();
+        const intervalId = setInterval(fetchToken, 1000);
+
+        // Clean up the interval on component unmount
+        return () => clearInterval(intervalId);
     }, []);
+
+
+    useEffect(() => {
+        if (isLoggedIn || imageUpdated) {
+            const fetchImage = async () => {
+                try {
+                    const token = Cookies.get('token');
+                    if (!token) {
+                        console.error('Token is missing.');
+                        return;
+                    }
+
+                    const response = await fetch('http://localhost:4000/api/my-Image', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': token
+                        }
+                    });
+
+                    if (!response.ok) {
+                        console.error('Error fetching image:', response.statusText);
+                        return;
+                    }
+
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    setImageSrc(imageUrl);
+                    console.log('Image fetched successfully.');
+                } catch (error) {
+                    console.error('Error fetching image:', error);
+                }
+            };
+
+            // Fetch the image initially
+            fetchImage();
+
+            // Set imageUpdated to false once the image is fetched
+            if (imageUpdated) {
+                setImageUpdated(false);
+            }
+        }
+    }, [isLoggedIn, imageUpdated]);
+
+
 
     const token = Cookies.get('token');
     useEffect(() => {
@@ -130,123 +172,110 @@ const Navbar = () => {
     }, [token, setUserDetails]);
 
 
-
-
-    useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    setPosition([position.coords.latitude, position.coords.longitude]);
-                },
-                (error) => {
-                    console.error('Error getting geolocation:', error);
-                }
-            );
-        } else {
-            console.error('Geolocation is not supported by this browser.');
-        }
-
-        // Check login status
-        const token = Cookies.get('token');
-        if (token) {
-            setIsLoggedIn(true);
-        } else {
-            setIsLoggedIn(false);
-        }
-    }, []);
-
-    //EXTRACTING ADDRESS
-    useEffect(() => {
-        if (position) {
-            const map = L.map('map').setView(position, 13);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            L.marker(position).addTo(map)
-                .bindPopup('You are here')
-                .openPopup();
-
-            // Resize the map to fit the modal
-            setTimeout(() => map.invalidateSize(), 100);
-        }
-    }, [position]);
-
-
-    function generateRandomId() {
-        return Math.floor(1000 + Math.random() * 9000);
-    }
-
     const handleConfirmAddress = async () => {
-        if (Cookies.get('token') && position) {
-            try {
-                const [latitude, longitude] = position;
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`);
-                const data = await response.json();
+        const addressData = {
+            streetAddress: streetAddress,
+            city: city,
+            state: state,
+            postalCode: postalCode,
+            country: country,
+        };
 
-                let formattedAddress = '';
+        try {
+            const response = await fetch('http://localhost:4000/api/addAddress', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `${token}`
+                },
+                body: JSON.stringify(addressData)
+            });
 
-                if (data.address) {
-                    const { city, state, postcode, country } = data.address;
-                    const street = Street
-                    const road = Room
-                    if (road) {
-                        formattedAddress += road + ', ';
-                    }
-                    if (road) {
-                        formattedAddress += street + ', ';
-                    }
-                    if (city) {
-                        formattedAddress += city + ', ';
-                    }
-                    if (state) {
-                        formattedAddress += state + ', ';
-                    }
-                    if (postcode) {
-                        formattedAddress += postcode + ', ';
-                    }
-                    if (country) {
-                        formattedAddress += country;
-                    }
-                }
-
-                if (!formattedAddress) {
-                    throw new Error('Failed to get address details');
-                }
-
-                const token = Cookies.get('token');
-                const addAddressResponse = await fetch(`${localhost}/api/addAddress`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `${token}`
-                    },
-                    body: JSON.stringify({
-                        addressID: generateRandomId(),
-                        address: formattedAddress,
-                        phoneNumber: PhoneNumber,
-
-                    })
-                });
-
-                if (addAddressResponse.ok) {
-                    toast.success('Address confirmed successfully!');
-                    navigate('/FoodMenu')
-                } else {
-                    throw new Error('Failed to confirm address');
-                }
-            } catch (error) {
-                console.error('Error confirming address:', error);
-                toast.error('Failed to confirm address. Please try again.');
+            if (!response.ok) {
+                throw new Error('Failed to add address');
             }
-        } else {
-            toast.error('Please login to confirm address.');
-            navigate('/Login')
+
+            // Reset input fields after successful submission
+            setStreetAddress('');
+            setCity('');
+            setState('');
+            setPostalCode('');
+            setCountry('');
+
+            toast("Address Added Successfully")
+            navigate('/')
+        } catch (error) {
+            console.error('Error adding address:', error);
+            // Handle error appropriately (e.g., show error message)
         }
     };
 
+    const [addresses, setAddresses] = useState([]);
 
+    // useEffect(() => {
+    //     const fetchAddresses = async () => {
+    //         try {
+    //             const token = Cookies.get('token');
+    //             const headers = {
+    //                 'Content-Type': 'application/json',
+    //                 'Authorization': `${token}`
+    //             };
+    //             const response = await fetch(`${localhost}/api/my-addresses`, { headers });
+    //             if (!response.ok) {
+    //                 throw new Error('Failed to fetch addresses');
+    //             }
+    //             const data = await response.json();
+    //             // Sort addresses by date in descending order and select the first address
+    //             const sortedAddresses = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+    //             const mostRecentAddress = sortedAddresses[0];
+    //             setAddresses([mostRecentAddress]); // Set the most recent address
+    //             console.log(addresses)
+    //         } catch (error) {
+    //             console.error('Error fetching addresses:', error);
+    //         }
+    //     };
+
+    //     // Fetch addresses initially when user is logged in
+    //     if (isLoggedIn) {
+    //         fetchAddresses();
+    //     }
+    // }, [isLoggedIn]);
+
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            try {
+                const token = Cookies.get('token');
+                if (!token) {
+                    console.error('Token is missing.');
+                    return;
+                }
+
+                const response = await fetch(`http://localhost:4000/api/my-addresses`, {
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('Error fetching addresses:', response.statusText);
+                    return;
+                }
+
+                const data = await response.json();
+                // Sort addresses by date in descending order
+                data.sort((a, b) => new Date(b.date) - new Date(a.date));
+                // Select the most recent address
+                const mostRecentAddress = data[0];
+                setAddresses([mostRecentAddress]);
+            } catch (error) {
+                console.error('Error fetching addresses:', error);
+            }
+        };
+
+        fetchAddresses();
+    }, [isLoggedIn]);
+
+    // console.log(addresses.map(addr => addr.City));
     return (
         <>
             <ToastContainer />
@@ -257,8 +286,26 @@ const Navbar = () => {
                             <i className="fa-solid fa-bars fw-bolder text-danger fs-4 "></i>
                         </Button>
                         <Link to="/"><i className="fa-solid fa-utensils fw-3 text-danger"></i></Link>
-                        <Link to="/" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" className="btn btn-danger d-none d-md-inline"  >Delivery</Link>
-                        <Link to="/" className="btn btn-danger d-none d-md-inline">Pickup</Link>
+                        {isLoggedIn && addresses.length > 0 ? (
+                        addresses.map((address, index) => (
+                            <Link key={index} to="#" className="btn btn-danger d-none d-md-block btn-sm rounded-2 bg-transparent text-dark border-0" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
+                                <div>
+                                    <i className="fa-solid fa-location-dot text-danger me-2"></i>
+                                    {address && address.City && address.State && address.PostalCode && address.Country ? (
+                                        `${address.City}, ${address.State}, ${address.PostalCode}, ${address.Country}`
+                                    ) : (
+                                        "Pick Location"
+                                    )}
+                                </div>
+
+                            </Link>
+                        ))
+                    ) : (
+                        <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" >
+                            <i className="fa-solid fa-plus text-danger me-2"></i>{"Add Address"}
+                        </Link>
+                    )}
+
                     </div>
 
                     <div className="d-flex gap-3 me-md-5" role="search">
@@ -335,24 +382,29 @@ const Navbar = () => {
                 </div>
             </nav>
             {/* modal for the delivery*/}
-             <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
                 <div className="modal-dialog">
-                    <div className={`modal-content bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
+                    <div className={`modal-content bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
                         <div className="modal-header">
-                            <h1 className="modal-title fs-5" id="exampleModalLabel">Modal title</h1>
+                            <h1 className="modal-title fs-5" id="exampleModalLabel">Add New Address</h1>
                             <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div className="modal-body">
-                            <div id="map" style={{ height: '400px', width: '100%' }}></div>
                             <div className="d-flex flex-column">
-                                <label htmlFor="room">Room/Floor:</label>
-                                <input type="text" value={Room} onChange={(e) => setRoom(e.target.value)} />
-                                <label htmlFor="road">Street:</label>
-                                <input type="text" value={Street} onChange={(e) => setStreet(e.target.value)} />
-                                <label htmlFor="number">Phone Number:</label>
-                                <input type="tel" value={PhoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                                <label htmlFor="streetAddress">Street Address:</label>
+                                <input type="text" value={streetAddress} onChange={(e) => setStreetAddress(e.target.value)} required={true} />
+                                <label htmlFor="city">City:</label>
+                                <input type="text" value={city} onChange={(e) => setCity(e.target.value)} required={true} />
+                                <label htmlFor="state">State:</label>
+                                <input type="text" value={state} onChange={(e) => setState(e.target.value)} required={true} />
+                                <label htmlFor="postalCode">Postal Code:</label>
+                                <input type="text" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required={true} />
+                                <label htmlFor="country">Country:</label>
+                                <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} required={true} />
                             </div>
                         </div>
+
+
                         <div className="modal-footer">
                             <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                             <button type="button" className="btn btn-primary" onClick={handleConfirmAddress}>Confirm Address</button>
@@ -360,15 +412,34 @@ const Navbar = () => {
                     </div>
                 </div>
             </div>
+
             <ul className={`nav justify-content-center d-md-none mt-5 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                 <li className="nav-item mt-3 mb-2">
-                    <button className=" btn btn-danger btn-sm rounded-2 " type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">Delivery</button>
-                </li>
-                <li className="nav-item mt-3 mb-2 ms-3">
-                    <button className="btn btn-danger btn-sm rounded-2">Pickup</button>
+                    {isLoggedIn && addresses.length > 0 ? (
+                        addresses.map((address, index) => (
+                            <Link key={index} to="#" className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
+                                <div>
+                                    <i className="fa-solid fa-location-dot text-danger me-2"></i>
+                                    {address && address.City && address.State && address.PostalCode && address.Country ? (
+                                        `${address.City}, ${address.State}, ${address.PostalCode}, ${address.Country}`
+                                    ) : (
+                                        "Pick Location"
+                                    )}
+                                </div>
+
+                            </Link>
+                        ))
+                    ) : (
+                        <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" >
+                            <i className="fa-solid fa-plus text-danger me-2"></i>{"Add Address"}
+                        </Link>
+                    )}
                 </li>
 
+
             </ul>
+
+
 
             <div className='container-fluid'>
                 <Drawer
@@ -420,14 +491,14 @@ const Navbar = () => {
                                                 }}
                                             >
                                                 <img src={imageSrc} alt="Footer Logo" style={{ height: '60px', width: '60px', marginRight: '20px', borderRadius: '50%' }} />
-                                                <div className={`d-flex  fw-medium text-${isDarkMode ? 'light': 'dark'} `} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                                <div className={`d-flex  fw-medium text-${isDarkMode ? 'light' : 'dark'} `} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
                                                     Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName}  `}
                                                     <i className="fa-solid fa-caret-up text-danger ms-2 fs-6 "></i>
                                                 </div>
                                             </button>
 
                                             <ul
-                                                className={`custom-menu  ` }
+                                                className={`custom-menu  `}
                                                 style={{
                                                     position: 'absolute',
                                                     top: 'calc(50% - 200px)', // Adjust the calculation based on the desired distance from the top

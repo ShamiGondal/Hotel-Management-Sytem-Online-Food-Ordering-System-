@@ -3,19 +3,9 @@ import './App.css'
 import Navbar from './Components/NavBar'
 import CustomerLogin from './Components/CustomerLogin'
 import CustomerSignup from './Components/CustomerSignup'
-import AdminLogin from './Components/Admin/AdminLogin'
-import AdminPortal from './Components/Admin/AdminPortal'
 import Reservations from './Components/Reservations'
 import Feedback from './Components/Feedback'
 import Complaints from './Components/Complaints'
-import AdminComplaints from './Components/Admin/Complaints'
-import FoodItems from './Components/Admin/FoodItems'
-import CustomerOrders from './Components/Admin/CustomerOrders'
-import CustomerReservations from './Components/Admin/CustomerReservations'
-import CustomerDetails from './Components/Admin/CustomerDetails'
-import CustomerPayments from './Components/Admin/CustomerPayments'
-import CustomerFeedbacks from './Components/Admin/CustomerFeedbacks'
-import AdminSettings from './Components/Admin/AdminSettings'
 import DisplayingFoodItems from './Components/DisplayingFoodItems'
 import { DarkModeProvider } from './Components/Hooks/DarkModeContext'
 import TrackOrder from './Components/TrackOrder'
@@ -54,20 +44,6 @@ function App() {
                 <Route path={'/Payment'} element={<PaymentForm/>} />
                 <Route path={'/FoodItemDetails/:id'} element={<FoodItemDetails/>} />
               </Route>
-
-              
-              <Route path={'/adminPortal'} element={<AdminPortal />}></Route>
-              <Route path={'Customer-Orders'} element={<CustomerOrders />} />
-              <Route path={'/adminLogin'} element={<AdminLogin />} />
-              <Route path={'Customer-Reservations'} element={<CustomerReservations />} />
-              <Route path={'Customer-Details'} element={<CustomerDetails />} />
-              <Route path={'Customer-Payments'} element={<CustomerPayments />} />
-              <Route path={'Customer-Feedbacks'} element={<CustomerFeedbacks />} />
-              <Route path={'FoodItems'} element={<FoodItems />} />
-              <Route path={'Admin-Settings'} element={<AdminSettings />} />
-              <Route path={'Customer-Complaints'} element={<AdminComplaints />} />
-              
-
 
             </Routes>
           </DarkModeProvider>
