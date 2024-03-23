@@ -82,8 +82,9 @@ function generateOrderItemId() {
 }
 
 Router.post('/placeOrder', fetchUser, async (req, res) => {
-    const { orderId, orderItems, paymentStatus, status ,orderNote} = req.body;
+    const { orderId, orderItems, paymentStatus, status, orderNote } = req.body;
     const customerID = req.user;
+    console.log(orderNote)
 
     try {
         // Check if all required fields are provided
@@ -96,18 +97,29 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
             return res.status(400).json({ error: "Invalid orderItems data." });
         }
 
+        // Get current date and time
+        const currentDate = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
+        const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false }); // Format: HH:MM:SS
+
+        // Calculate total amount
+        const totalAmount = calculateTotalAmount(orderItems);
+
         // Insert order into Orders table
-        const orderDate = new Date().toISOString().slice(0, 10);
         const orderInsertQuery = `
-            INSERT INTO Orders (OrderID, CustomerID, OrderDate, PaymentStatus, TotalAmount, Status, OrderNote)
-            VALUES (?, ?, ?, ?, ?, ?,?);
+            INSERT INTO Orders (OrderID, CustomerID, OrderDate, OrderTime, PaymentStatus, TotalAmount, Status, OrderNote)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
         `;
-        await pool.promise().query(orderInsertQuery, [orderId, customerID, orderDate, paymentStatus, calculateTotalAmount(orderItems), status, orderNote]);
+
+        // Check if orderNote is provided, otherwise use an empty string
+        const orderNoteValue = orderNote ? orderNote : '';
+
+        await pool.promise().query(orderInsertQuery, [orderId, customerID, currentDate, currentTime, paymentStatus, totalAmount, status, orderNoteValue]);
 
         // Insert order items into OrderItems table
         for (const item of orderItems) {
             const { foodItemID, quantity, subtotal } = item;
 
+            console.log(foodItemID, quantity, subtotal)
             // Check if all required fields for order item are provided
             if (!foodItemID || !quantity || !subtotal) {
                 return res.status(400).json({ error: "Missing required fields for order item." });
@@ -139,33 +151,24 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
 
 
 
+
 Router.get('/my-recent-orders', fetchUser, async (req, res) => {
     const customerID = req.user;
 
     try {
-        // Fetch the most recent three orders for the customer along with the food items
-        const getRecentOrderItemIDsQuery = `
-            SELECT OrderItems.FoodItemID
+        // Fetch the most recent four orders for the customer along with the food items
+        const getRecentOrdersQuery = `
+            SELECT Orders.OrderID, Orders.OrderDate, OrderItems.FoodItemID, FoodItems.Title, FoodItems.Subtitle, FoodItems.Description, FoodItems.Price, FoodItems.ImageURL
             FROM Orders
             INNER JOIN OrderItems ON Orders.OrderID = OrderItems.OrderID
+            INNER JOIN FoodItems ON OrderItems.FoodItemID = FoodItems.FoodItemID
             WHERE Orders.CustomerID = ?
             ORDER BY Orders.OrderDate DESC, Orders.OrderTime DESC
             LIMIT 4;
         `;
-        const [recentOrderItems] = await pool.promise().query(getRecentOrderItemIDsQuery, [customerID]);
+        const [recentOrders] = await pool.promise().query(getRecentOrdersQuery, [customerID]);
 
-        // Extract food item IDs from the query result
-        const foodItemIDs = recentOrderItems.map(orderItem => orderItem.FoodItemID);
-
-        // Fetch food item details corresponding to the retrieved IDs
-        const getFoodItemDetailsQuery = `
-            SELECT FoodItemID, Title, Subtitle, Description, Price, ImageURL
-            FROM FoodItems
-            WHERE FoodItemID IN (?);
-        `;
-        const [foodItems] = await pool.promise().query(getFoodItemDetailsQuery, [foodItemIDs]);
-
-        res.status(200).json({ recentOrders: foodItems });
+        res.status(200).json({ recentOrders });
     } catch (error) {
         console.error("Error fetching recent orders:", error);
         res.status(500).json({ error: "An error occurred while fetching recent orders." });
@@ -173,10 +176,11 @@ Router.get('/my-recent-orders', fetchUser, async (req, res) => {
 });
 
 
+
 // POST request to add a review
 Router.post('/my-Review', fetchUser, async (req, res) => {
     try {
-        const CustomerID = req.user; 
+        const CustomerID = req.user;
         const { FoodItemID, Rating, Comment } = req.body;
         // Insert the review into the database
         const insertQuery = 'INSERT INTO FoodItemsReview (CustomerID, FoodItemID, Rating, Comment) VALUES (?, ?, ?, ?)';
@@ -253,7 +257,7 @@ Router.post('/createReservation', fetchUser, async (req, res) => {
         // If an error occurs, rollback the transaction
         console.error("Error creating reservation:", error);
         res.status(500).json({ error: "An error occurred while creating the reservation." });
-    } 
+    }
 });
 
 
@@ -268,7 +272,7 @@ Router.post('/submitFeedback', fetchUser, async (req, res) => {
             return res.status(400).json({ error: "Missing required fields in the request body." });
         }
 
-    
+
         const feedbackInsertQuery = `INSERT INTO Feedback (CustomerID, ServiceRating, FoodRating, Comment) VALUES (?, ?, ?, ?)`;
         await pool.promise().query(feedbackInsertQuery, [customerID, serviceRating, foodRating, comment]);
 
@@ -277,7 +281,7 @@ Router.post('/submitFeedback', fetchUser, async (req, res) => {
         // If an error occurs, rollback the transaction
         console.error("Error submitting feedback:", error);
         res.status(500).json({ error: "An error occurred while submitting the feedback." });
-    } 
+    }
 });
 
 
@@ -311,9 +315,7 @@ Router.post('/addComplaints', fetchUser, async (req, res) => {
 
 Router.post('/addPayment', fetchUser, async (req, res) => {
     const { orderId, amount } = req.body;
-    const userID = req.user; // Assuming req.user contains the user ID
-    const PaymentDate = new Date().toISOString().slice(0, 19).replace('T', ' '); // Assuming you want to set the payment date as the current date
-    const CustomerID = req.user;
+    const customerID = req.user;
 
     try {
         // Check if orderId and amount are provided
@@ -327,19 +329,22 @@ Router.post('/addPayment', fetchUser, async (req, res) => {
         }
 
         // Validate amount format (you can add your own validation logic)
-        if (typeof amount !== 'number' || amount <= 0) {
+        const amountRegex = /^\d+(\.\d{1,2})?$/;
+        if (!amountRegex.test(amount)) {
             return res.status(400).json({ error: 'Invalid amount' });
         }
 
-        // Check if the user is authorized to perform this action (optional)
-        // Example: if (req.user.role !== 'admin') { return res.status(401).json({ error: 'Unauthorized' }); }
+        // Convert amount to a fixed decimal number with 2 decimal places
+        const fixedAmount = parseFloat(amount).toFixed(2);
+
+        const PaymentDate = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
 
         // Insert payment into the database
         const query = `
             INSERT INTO Payments (OrderID, CustomerID, Amount, PaymentDate)
             VALUES (?, ?, ?, ?)
         `;
-        await pool.query(query, [orderId, CustomerID, amount, PaymentDate]);
+        await pool.promise().query(query, [orderId, customerID, fixedAmount, PaymentDate]);
 
         // Respond with success message
         res.status(200).json({ message: 'Payment added successfully' });
@@ -546,24 +551,34 @@ const stripe = require('stripe')('sk_test_51OINxgHgDxyW6XeqXdvsjgWOyp1oKvTDcbcli
 
 // Route for creating a session
 Router.post('/payment-session', async (req, res) => {
-    const { items } = req.body;
-    console.log(items)
-
+    const { items, totalAmount } = req.body;
+    console.log(totalAmount)
 
     try {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: items.map(item => ({
+        const totalAmountCents = Math.round(parseFloat(totalAmount) * 100);
+        console.log(totalAmountCents)
+        const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
+        const lineItems = items.map(item => {
+            const unitAmount = Math.round((totalAmountCents * item.quantity) / totalQuantity);
+            if (isNaN(unitAmount) || unitAmount <= 0) {
+                console.log(unitAmount ,'hello')
+                throw new Error(`Invalid unit amount for item '${item.name}'`);
+            }
+            return {
                 price_data: {
                     currency: 'usd',
                     product_data: {
                         name: item.name
                     },
-                    unit_amount: Number.isNaN(item.price) ? 0 : item.price * 100, // Convert price to cents, handle NaN
+                    unit_amount: unitAmount,
                 },
+                quantity: item.quantity,
+            };
+        });
 
-                quantity: 1,
-            })),
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: lineItems,
             mode: 'payment',
             success_url: 'http://localhost:5173/',
             cancel_url: 'http://localhost:5173/Cart',
@@ -574,6 +589,8 @@ Router.post('/payment-session', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+
 
 
 

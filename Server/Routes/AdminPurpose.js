@@ -3,78 +3,93 @@ const { mssql, pool, sql } = require('../db/db');
 const Router = express.Router();
 const fetchCustomer = require('../middlewares/fetchCustomer')
 const multer = require('multer');
+const { json } = require('stream/consumers');
+const fetchUser = require('../middlewares/fetchCustomer');
 // const { cloudinary } = require('../db/ColudinaryConfig.jsx')
 const cloudinary = require('cloudinary').v2;
-const upload = multer({ dest: 'uploads/' });
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'uploads/') // Specify your upload directory
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname)
+    }
+});
+const upload = multer({ storage: storage });
 
-//These all routes are for the admin portal becuase every user need his own specific details not the all and 
-//these routes gives all details of all users not specific that's why its for admin purpose 
-
-//admin can only add the foodItems
 
 //inserting foodItems
 
-     
-cloudinary.config({ 
-  cloud_name: 'applyace-storage', 
-  api_key: '357132674117494', 
-  api_secret: 'D4AZuelvk2GvDpgJ_U6bKkAbhl4' 
+
+cloudinary.config({
+    cloud_name: 'applyace-storage',
+    api_key: '357132674117494',
+    api_secret: 'D4AZuelvk2GvDpgJ_U6bKkAbhl4'
 });
 
 
-Router.post('/addFoodItems', upload.single('image'), async (req, res) => {
-    const { title, subtitle, description, price, sizes, specialSelection, isAvailable, foodItemDiscount, category } = req.body;
-  
-    // Check for missing fields
-    if (!title || !subtitle || !description || !price || !sizes || !specialSelection || isAvailable === undefined || isAvailable === null || !foodItemDiscount || !category) {
-      return res.status(400).json({ error: "All fields are required." });
-    }
-  
-    // Validate price
-    if (isNaN(price) || price <= 0) {
-      return res.status(400).json({ error: "Price must be a valid number greater than zero." });
-    }
-  
-    //uploading image  to cloudinary
+Router.post('/addFoodItems', upload.array('images'), async (req, res) => {
     try {
-        const result = await cloudinary.uploader.upload(req.file.path, { folder: 'FoodItems' }); // Specify the folder name here
-        const imageUrl = result.secure_url;
-  
-      // Serialize arrays into strings
-      const sizesString = JSON.stringify(sizes);
-      const specialSelectionString = JSON.stringify(specialSelection);
-      const imageURLString = JSON.stringify(imageUrl)
-      const isAvailableValue = req.body.isAvailable === 'on' ? 1 : 0;
+        // Extract fields from the request body
+        const { title, subtitle, description, price, sizesAndPrices, selectionsAndPrices, isAvailable, foodItemDiscount, category } = req.body;
 
-      // Insert the food item into the database
-      const foodItemQuery = 'INSERT INTO FoodItems (Title, Subtitle, Description, Price, Sizes, SpecialSelection, IsAvailable, FoodItemDiscount, Category, ImageURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?,?)';
-      pool.query(foodItemQuery, [title, subtitle, description, price, sizesString, specialSelectionString, isAvailableValue, foodItemDiscount, category, imageURLString], (error, results) => {
-        if (error) {
-          console.error("Error inserting food item:", error);
-          return res.status(500).json({ error: "An error occurred while inserting the food item." });
-        } else {
-          res.status(200).json({
-            message: "Successfully Inserted the FoodItem",
-            FoodItem: {
-              Title: title,
-              Subtitle: subtitle,
-              Description: description,
-              Price: price,
-              Sizes: sizes,
-              SpecialSelection: specialSelection,
-              IsAvailable: isAvailableValue,
-              FoodItemDiscount: foodItemDiscount,
-              Category: category,
-              ImageURL: imageURLString
-            }
-          });
+        // Check for missing fields
+        if (!title || !subtitle || !description || !price || !sizesAndPrices || !selectionsAndPrices || isAvailable === undefined || isAvailable === null || !foodItemDiscount || !category) {
+            return res.status(400).json({ error: "All fields are required." });
         }
-      });
+
+        // Validate price
+        if (isNaN(price) || price <= 0) {
+            return res.status(400).json({ error: "Price must be a valid number greater than zero." });
+        }
+
+        // Upload images to Cloudinary
+        const imageUrls = [];
+        for (const file of req.files) {
+            const result = await cloudinary.uploader.upload(file.path, { folder: 'FoodItems' });
+            imageUrls.push(result.secure_url);
+        }
+
+        // Convert array of image URLs to JSON string
+        const imageURLString = JSON.stringify(imageUrls);
+
+        // Convert sizes and specialSelections to JSON strings
+        const sizesString = JSON.stringify(sizesAndPrices);
+        const specialSelectionString = JSON.stringify(selectionsAndPrices);
+
+        const isAvailableValue = isAvailable === 'on' ? 1 : 0;
+
+        // Insert the food item into the database
+        const foodItemQuery = 'INSERT INTO FoodItems (Title, Subtitle, Description, Price, Sizes, SpecialSelection, IsAvailable, FoodItemDiscount, Category, ImageURL) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        pool.query(foodItemQuery, [title, subtitle, description, price, sizesString, specialSelectionString, isAvailableValue, foodItemDiscount, category, imageURLString], (error, results) => {
+            if (error) {
+                console.error("Error inserting food item:", error);
+                return res.status(500).json({ error: "An error occurred while inserting the food item." });
+            } else {
+                res.status(200).json({
+                    message: "Successfully Inserted the FoodItem",
+                    FoodItem: {
+                        Title: title,
+                        Subtitle: subtitle,
+                        Description: description,
+                        Price: price,
+                        Sizes: sizesString,
+                        SpecialSelection: specialSelectionString,
+                        IsAvailable: isAvailableValue,
+                        FoodItemDiscount: foodItemDiscount,
+                        Category: category,
+                        ImageURL: imageURLString
+                    }
+                });
+            }
+        });
     } catch (error) {
-      console.error("Error uploading image to Cloudinary:", error);
-      return res.status(500).json({ error: "An error occurred while uploading image to Cloudinary." });
+        console.error("Error uploading images to Cloudinary:", error);
+        return res.status(500).json({ error: "An error occurred while uploading images to Cloudinary." });
     }
-  });
+});
+
+
 
 Router.post('/addAddon', upload.single('image'), async (req, res) => {
     const { title, subtitle, size, description, price } = req.body;
@@ -107,6 +122,35 @@ Router.post('/addAddon', upload.single('image'), async (req, res) => {
         }
     });
 });
+
+Router.post('/addCoupons', async (req, res) => {
+    const { couponCode, status ,CopounDiscountAmount} = req.body;
+
+    try {
+        // const connection = await pool.getConnection();
+        await pool.promise().query('INSERT INTO coupons (couponCode, status,CopounDiscountAmount) VALUES (?, ?,?)', [couponCode, status,CopounDiscountAmount]);
+        // connection.release();
+        res.status(201).json({ message: 'Coupon created successfully' });
+    } catch (error) {
+        console.error('Error creating coupon:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+Router.get('/getCoupons', async (req, res) => {
+    try {
+        // Fetch coupons from the database
+        const coupons = await pool.promise().query('SELECT * FROM coupons');
+        
+        // Return the coupons in the response
+        res.status(200).json(coupons);
+    } catch (error) {
+        console.error('Error fetching coupons:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 
 Router.get('/getAddons', (req, res) => {
     // Fetch addons from the database

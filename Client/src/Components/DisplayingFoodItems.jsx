@@ -40,7 +40,7 @@ function DisplayingFoodItems() {
             .then(data => setFoodItems(data))
             .catch(error => console.error('Error fetching food items:', error));
         setIsLoading(false);
-        console.log(foodItems)
+        console.log("fooditems", foodItems)
     }, []);
 
 
@@ -144,7 +144,7 @@ function DisplayingFoodItems() {
                 });
                 const data = await response.json();
                 setRecentOrders(data.recentOrders);
-                console.log(recentOrders)
+                console.log("recent orders", recentOrders)
             } catch (error) {
                 console.error('Error fetching recent orders:', error);
             }
@@ -240,7 +240,12 @@ function DisplayingFoodItems() {
                                 {recentOrders.map((order, index) => (
                                     <div key={index} className="col mb-3">
                                         <div className={`card bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `} style={{ width: "17rem" }}>
-                                            <img className="card-img-top" src={order.ImageURL} alt="Card image cap" />
+                                            {order.ImageURL && Array.isArray(order.ImageURL) && (
+                                                <div className="h-25">
+                                                    <img className="card-img-top" style={{ height: "200px" }} src={order.ImageURL[0]} alt="Card image cap" />
+                                                </div>
+                                            )}
+
                                             <div className="card-body">
                                                 <h5 className="card-title">{order.Title}</h5>
                                                 <p className="card-text">{order.Subtitle}</p>
@@ -304,7 +309,13 @@ function DisplayingFoodItems() {
                                                     style={{ position: 'relative', zIndex: 1 }}
                                                 >
                                                     <div className={`card  position-relative  rounded-2 bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
-                                                        <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
+                                                        {foodItem.ImageURL && (
+                                                            Array.isArray(foodItem.ImageURL) ? (
+                                                                <img className="card-img-top rounded-top" src={foodItem.ImageURL[0]} alt={`First Image`} />
+                                                            ) : (
+                                                                <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
+                                                            )
+                                                        )}
                                                         <div className="position-absolute d-flex justify-content-between w-100">
                                                             <div className="bg-danger ms-2 p-1 pt-2 fs-6 fw-medium text-black bg-opacity-100 ">{foodItem.FoodItemDiscount}%</div>
                                                             <div className=" p-2 fs-5 fw-lighter bg-opacity-10 text-white"><i className="fa-solid fa-heart"></i></div>
@@ -358,7 +369,14 @@ function DisplayingFoodItems() {
                                                     style={{ position: 'relative', zIndex: 1 }}
                                                 >
                                                     <div className={`card  position-relative  rounded-2 bg-${isDarkMode ? 'dark' : 'light'} bg-opacity-50 food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
-                                                        <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
+                                                        {foodItem.ImageURL && (
+                                                            Array.isArray(foodItem.ImageURL) ? (
+                                                                <img className="card-img-top rounded-top" src={foodItem.ImageURL[0]} alt={`First Image`} />
+                                                            ) : (
+                                                                <img className="card-img-top rounded-top" src={foodItem.ImageURL} alt="Card image cap" />
+                                                            )
+                                                        )}
+
                                                         <div className="position-absolute d-flex justify-content-between w-100">
                                                             <div className="bg-danger ms-2 p-1 pt-2 fs-6 fw-medium text-black bg-opacity-100 ">{foodItem.FoodItemDiscount}%</div>
                                                             <div className=" p-2 fs-5 fw-lighter bg-opacity-10 text-white"><i className="fa-solid fa-heart"></i></div>

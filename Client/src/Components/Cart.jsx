@@ -21,13 +21,35 @@ const Cart = () => {
     const stripe = useStripe();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { cartItems, removeFromCart, increaseQuantity, decreaseQuantity, clearCart } = useCartContext();
+    const { cartItems,
+        totalAmount,
+        totalActualAmount,
+        addToCart,
+        removeFromCart,
+        increaseQuantity,
+        decreaseQuantity,
+        clearCart,
+        addSingleItemToCart,
+        setTotalAmount,
+        setTotalActualAmount
+    } = useCartContext();
     const localhost = `http://localhost:4000`;
     // const [confirmOrder, setConfirmOrder] = useState(false);
     const [openDialog, setOpenDialog] = useState(false);
     const [addresses, setAddresses] = useState([]);
     const [currentAddress, setCurrentAddress] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('online');
+    const [validCoupon, setValidCoupon] = useState(null);
+    const [streetAddress, setStreetAddress] = useState('');
+    const [city, setCity] = useState('');
+    const [state, setState] = useState('');
+    const [postalCode, setPostalCode] = useState('');
+    const [country, setCountry] = useState('');
+
+    const [coupons, setCoupons] = useState([]);
+    // const [totalAmount, setTotalAmount] = useState(0);
+    const [couponInput, setCouponInput] = useState('');
+    const [couponError, setCouponError] = useState('');
 
     const handlePaymentMethodChange = (event) => {
         setPaymentMethod(event.target.value);
@@ -48,17 +70,7 @@ const Cart = () => {
         decreaseQuantity(cartItems[index].FoodItemID);
     };
 
-    const calculateTotalAmount = () => {
-        let total = 0;
-        if (Array.isArray(cartItems)) {
-            for (const item of cartItems) {
-                const discountAmount = (item.Price * item.quantity * item.FoodItemDiscount) / 100;
-                const discountedPrice = item.Price * item.quantity - discountAmount;
-                total += discountedPrice;
-            }
-        }
-        return total;
-    };
+
 
     useEffect(() => {
         const token = Cookies.get('token');
@@ -86,6 +98,65 @@ const Cart = () => {
 
     const [orderNote, setorderNote] = useState([])
 
+    // const handleOrderSubmit = async () => {
+    //     try {
+    //         const token = Cookies.get("token");
+    //         if (!token) {
+    //             navigate('/Login');
+    //         } else {
+    //             const orderId = generateRandomOrderId(); // Generate order ID here
+    //             const response = await fetch(`${localhost}/api/placeOrder`, {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json',
+    //                     'Authorization': `${token}`
+    //                 },
+    //                 body: JSON.stringify({
+    //                     orderId: orderId,
+    //                     orderItems: cartItems.map(item => ({
+    //                         foodItemID: item.FoodItemID,
+    //                         quantity: item.quantity,
+    //                         subtotal: totalAmount // Update subtotal calculation
+    //                     })),
+    //                     paymentStatus: 'Pending',
+    //                     status: 'Pending',
+    //                     orderNote: orderNote
+    //                 }),
+    //             });
+
+    //             const data = await response.json();
+    //             console.log('Order placed successfully:', data);
+    //             toast.success('Order placed successfully');
+
+    //             // Calculate total amount
+    //             // const totalAmount = cartItems.reduce((total, item) => total + (item.quantity * item.Price), 0);
+
+    //             if (paymentMethod === 'online') {
+    //                 const paymentResponse = await fetch(`${localhost}/api/addPayment`, {
+    //                     method: 'POST',
+    //                     headers: {
+    //                         'Content-Type': 'application/json',
+    //                         'Authorization': `${token}`
+    //                     },
+    //                     body: JSON.stringify({
+    //                         orderId: orderId,
+    //                         amount: totalAmount.toFixed(2) // Send total amount for online payment
+    //                     }),
+    //                 });
+    //                 const paymentData = await paymentResponse.json();
+    //                 console.log('Payment added successfully:', paymentData);
+    //                 handleStripePayment(); // Call function to initiate Stripe payment AFTER adding payment
+    //             } else {
+    //                 clearCart();
+    //                 setOpenDialog(false);
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.error('Error placing order:', error);
+    //     }
+    // };
+
+
     const handleOrderSubmit = async () => {
         try {
             const token = Cookies.get("token");
@@ -102,9 +173,9 @@ const Cart = () => {
                     body: JSON.stringify({
                         orderId: orderId,
                         orderItems: cartItems.map(item => ({
-                            foodItemID: item.FoodItemID,
+                            foodItemID: item.FoodItemID ? item.FoodItemID : item.AddonID, 
                             quantity: item.quantity,
-                            subtotal: item.Price * item.quantity - (item.Price * item.quantity * item.FoodItemDiscount) / 100
+                            subtotal: totalAmount // Update subtotal calculation
                         })),
                         paymentStatus: 'Pending',
                         status: 'Pending',
@@ -112,31 +183,38 @@ const Cart = () => {
                     }),
                 });
 
-                if (paymentMethod === 'online') {
-                    const paymentResponse = await fetch(`${localhost}/api/addPayment`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `${token}`
-                        },
-                        body: JSON.stringify({
-                            orderId: orderId, // Use the same order ID here
-                            amount: calculateTotalAmount(), // Assuming cartTotal is the total amount to be paid
-                            paymentDate: new Date().toISOString(), // Assuming you want to set the payment date as the current date
-                        }),
-                    });
-                    const paymentData = await paymentResponse.json();
-                    console.log('Payment added successfully:', paymentData);
-                    handleSubmit()
-                } else {
-                    setOpenDialog(false)
-                }
-
                 const data = await response.json();
                 console.log('Order placed successfully:', data);
                 toast.success('Order placed successfully');
-                clearCart();
-                setOpenDialog(false);
+
+                // Calculate total amount
+                // const totalAmount = cartItems.reduce((total, item) => total + (item.quantity * item.Price), 0);
+
+                // Add payment for both online and COD payment methods
+                fetch(`${localhost}/api/addPayment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${token}`
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        amount: totalAmount // Send total amount for both online and COD payments
+                    }),
+                }).then(paymentResponse => paymentResponse.json())
+                    .then(paymentData => {
+                        console.log('Payment added successfully:', paymentData);
+
+                        if (paymentMethod === 'online') {
+                            handleStripePayment(orderId); // Call function to initiate Stripe payment AFTER adding payment
+                        } else {
+                            clearCart();
+                            setOpenDialog(false);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error adding payment:', error);
+                    });
             }
         } catch (error) {
             console.error('Error placing order:', error);
@@ -144,46 +222,64 @@ const Cart = () => {
     };
 
 
-    const handleSubmit = async () => {
-
+    const handleStripePayment = async (orderId) => {
+        const token = Cookies.get('token')
         try {
-
-            // Prepare the items array to send to the backend
             const itemsToSend = cartItems.map(item => ({
-                name: item.Name,
-                price: item.Price,
+                name: item.Title,
+                price_data: {
+                    currency: 'usd',
+                    unit_amount: totalAmount, // Convert total price to cents
+                    product_data: {
+                        name: item.Title,
+                    },
+                },
                 quantity: item.quantity,
             }));
-
-            // Fetch payment intent client secret from your server
+    
             const response = await fetch(`${localhost}/api/payment-session`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ items: itemsToSend }),
+                body: JSON.stringify({ items: itemsToSend, totalAmount: totalAmount }),
             });
-
+    
             const { sessionId } = await response.json();
-
-            // Redirect to checkout with sessionId
-            const { error: redirectToCheckoutError } = stripe.redirectToCheckout({
+    
+            const { error } = await stripe.redirectToCheckout({
                 sessionId: sessionId,
             });
-
-            if (redirectToCheckoutError) {
-                console.error(redirectToCheckoutError);
+    
+            if (error) {
+                console.error(error);
                 toast.error('Failed to redirect to checkout. Please try again.');
-                setLoading(false);
+            } else {
+                // Stripe payment successful, add payment to the database
+                const addPaymentResponse = await fetch(`${localhost}/api/addPayment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `${token}`
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId,
+                        amount: totalAmount // Send total amount for both online and COD payments
+                    }),
+                });
+    
+                const addPaymentData = await addPaymentResponse.json();
+                console.log('Payment added successfully:', addPaymentData);
+                clearCart();
+                setOpenDialog(false);
             }
-
         } catch (error) {
-            console.error('Error creating payment method:', error);
-            setError(error.message);
-            toast.error('Payment error. Please try again or use Cash on Delivery.');
-            setLoading(false);
+            console.error('Error handling Stripe payment:', error);
+            toast.error('Payment error. Please try again.');
         }
     };
+    
+
 
     useEffect(() => {
         return () => {
@@ -193,14 +289,112 @@ const Cart = () => {
         };
     })
 
+    useEffect(() => {
+        const fetchCoupons = async () => {
+            try {
+                const response = await fetch(`${localhost}/api/getCoupons`, {
+                    method: "GET"
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to fetch coupons');
+                }
+                const data = await response.json();
+                setCoupons(data);
+                console.log("copouns", coupons)
+            } catch (error) {
+                console.error('Error fetching coupons:', error);
+            }
+        };
+
+        fetchCoupons();
+    }, []);
 
 
 
-    const [streetAddress, setStreetAddress] = useState('');
-    const [city, setCity] = useState('');
-    const [state, setState] = useState('');
-    const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
+    const calculateTotalAmounts = () => {
+        let total = 0;
+        let actualTotal = 0;
+
+        // Calculate total and actual total without coupon
+        cartItems.forEach(item => {
+            total += parseFloat(item.totalPrice) * item.quantity;
+            actualTotal += parseFloat(item.totalActualPrice) * item.quantity;
+        });
+
+        // Add delivery charge
+        total += 2;
+
+        // Calculate tax amount
+        const taxAmount = (total * 5) / 100;
+
+        // Apply tax
+        total += taxAmount;
+
+        // Apply coupon discount if applicable
+        if (validCoupon) {
+            const discountAmount = parseFloat(validCoupon.CopounDiscountAmount);
+            total -= discountAmount;
+        }
+
+
+        // Update state with calculated totals
+        setTotalAmount(total.toFixed(2));
+        setTotalActualAmount(actualTotal.toFixed(2));
+    };
+
+    useEffect(() => {
+        calculateTotalAmounts();
+    }, [cartItems, validCoupon]);
+    // useEffect(() => {
+    //     const calculateTotalAmount = () => {
+    //         const totalPrice = cartItems.reduce((acc, item) => acc + parseFloat(item.totalPrice), 0);
+    //         const deliveryCharges = 2; // Assuming fixed delivery charges
+    //         const taxPercentage = 5; // Assuming 5% tax
+
+    //         // Calculate tax amount
+    //         const taxAmount = (totalPrice * taxPercentage) / 100;
+    //         // Calculate total amount including tax and delivery charges
+    //         let totalAmount = totalPrice + deliveryCharges + taxAmount;
+
+    //         // Apply coupon discount if applicable
+    //         if (validCoupon) {
+    //             const discountAmount = parseFloat(validCoupon.CopounDiscountAmount);
+    //             totalAmount -= discountAmount;
+    //         }
+
+    //         if (!isNaN(totalAmount)) {
+    //             // setTotalAmount(totalAmount.toFixed(2)); // Round to 2 decimal places
+    //         }
+    //     };
+
+    //     calculateTotalAmount();
+    // }, [cartItems, validCoupon]);
+
+    const applyCoupon = () => {
+        // You can add more validation logic here if needed
+        if (!couponInput) {
+            setCouponError('Please enter a coupon code.');
+            return;
+        }
+
+        // Check if the entered coupon code matches any active coupon in the database
+        const coupon = coupons.flat().find(coupon => {
+            return coupon.status === 'active' && coupon.couponCode.toUpperCase() === couponInput.toUpperCase();
+        });
+        if (coupon) {
+            toast.success("Coupon Applied")
+            setValidCoupon(coupon);
+        } else {
+            // No valid coupon found
+            setValidCoupon(null);
+            setCouponError('Invalid or inactive coupon code. Please try again.');
+        }
+    };
+
+    const handleCouponChange = (event) => {
+        setCouponInput(event.target.value);
+        setCouponError(''); // Clear any previous error when the input changes
+    };
 
 
     const handleConfirmAddress = async () => {
@@ -242,6 +436,9 @@ const Cart = () => {
     };
 
 
+
+
+
     return (
         <>
             <ToastContainer />
@@ -251,62 +448,117 @@ const Cart = () => {
                     <div className="container">
                         <h2 className={`text-center mb-4  text-${isDarkMode ? 'light' : 'dark'}`}>Your <i className="fa-solid fa-cart-shopping text-success"></i> has <span className='text-warning' >{cartItems.length}</span> Items</h2>
                         {cartItems && cartItems.map((item, index) => (
-                            <div key={index} className="card  mb-4" style={{ borderRadius: '15px' }}>
-                                <div className="card-body  ">
-                                    <div className="d-flex mt-2 mt-md- flex-column flex-md-row justify-content-between align-items-center">
-                                        <h3>{item.Title}</h3>
+                            <div key={index} className="card mb-4" style={{ borderRadius: '15px' }}>
+                                <div className="card-body">
+                                    <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                        <div>
+                                            <h3>{item.Title} {item.selectedSize && <small className='me-2'> ({item.selectedSize.size})</small>}</h3>
+                                            <small className='me-2'>Per Item Cost</small>
+                                            <small className='me-2'>
+                                                {item.Title} -
+                                                {item.selectedSize && item.selectedSize.price ? (
+                                                    <small className='me-2'>${item.selectedSize.price}</small>
+                                                ) : (
+                                                    <small className='me-2'>${item.Price}</small>
+                                                )}
+                                            </small>
+                                            <div className="d-flex">
+                                                {item.selectedAdditions && item.selectedAdditions.length > 0 && (
+                                                    <>
+                                                        <small className='me-2'>{item.selectedAdditions.map(({ selection }) => selection).join(', ')}: </small>
+                                                        <small className='me-2'>${item.selectedAdditions.map(({ price }) => price).join(', ')}</small>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
                                         <button className="btn btn-outline-danger btn-sm" onClick={() => handleRemove(index)}>Remove</button>
                                     </div>
-                                    <div className="d-flex justify-content-between align-items-center mt-2 d-flex flex-column flex-md-row mt-2 mt-md- ">
-                                        <div className=''>
+                                    <div className="d-flex justify-content-between align-items-center mt-2 d-flex flex-column flex-md-row mt-2 mt-md-">
+                                        <div>
                                             <button className="btn btn-outline-secondary btn-sm" onClick={() => handleDecrease(index)}>-</button>
                                             <span className="mx-2">{item.quantity}</span>
                                             <button className="btn btn-outline-secondary btn-sm" onClick={() => handleIncrease(index)}>+</button>
-                                        </div>
-                                        <div className='d-flex flex-column flex-md-row mt-2 mt-md-0'>
-                                            <small className='me-2'>Price per Item: {item.Price}</small>
-                                            <small>Total: {item.Price * item.quantity}</small>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         ))}
+
                         <div className="mt-4">
+                            {cartItems && cartItems.length > 0 && (
+                                <div>
+                                    {cartItems.map((item, index) => (
+                                        <div key={index}>
+                                            {/* Your existing cart item display logic */}
+                                        </div>
+                                    ))}
+                                    <hr />
+                                    <div className="d-flex justify-content-between">
+                                        <span>Total Actual Price</span>
+                                        <span>
+                                            <small>${cartItems.reduce((total, item) => total + parseFloat(item.totalActualPrice || 0), 0)}</small>
+                                        </span>
+                                    </div>
+                                    <hr />
+                                    <div className="d-flex justify-content-between">
+                                        <span>Total Price</span>
+                                        <span>
+                                            <small>${cartItems.reduce((total, item) => total + parseFloat(item.totalPrice || 0), 0)}</small>
+                                        </span>
+                                    </div>
+                                    <hr />
+                                    <div className="d-flex justify-content-between">
+                                        <span>Delivery Charges</span>
+                                        <span>$ 2</span>
+                                    </div>
+                                    <hr />
+                                    <div className="d-flex justify-content-between">
+                                        <span>Tax and Charges</span>
+                                        <span>5 %</span> {/* Assuming tax is 5% */}
+                                    </div>
+                                </div>
+                            )}
+
+                            <hr />
+
                             <div className="d-flex justify-content-between">
-                                <span>Order Total</span>
-                                <span>$ {calculateTotalAmount()}</span>
+                                <input
+                                    type="text"
+                                    name='coupon'
+                                    placeholder='Apply Coupon'
+                                    className={`form-group rounded-2 p-2 border-1 border-danger mt-2 text-${isDarkMode ? "white" : "black"}`}
+                                    value={couponInput}
+                                    onChange={handleCouponChange}
+                                />
+                                <button className="btn btn-primary btn-sm mt-2" onClick={applyCoupon}>
+                                    Apply Coupon
+                                </button>
                             </div>
+                            {couponError && <div className="text-danger">{couponError}</div>}
                             <hr />
                             <div className="d-flex justify-content-between">
-                                <span>Delivery Charges</span>
-                                <span>$ 2</span>
+                                <span className='fw-bold fs-5' style={{ color: "#79f" }}>To Pay</span>
+                                {cartItems && cartItems.length > 0 ? (
+                                    <span>$ {totalAmount}</span>
+                                ) : (
+                                    <span>$ 0</span>
+
+                                )}
                             </div>
+
                             <hr />
-                            <div className="d-flex justify-content-between">
-                                <span>Tax and Charges</span>
-                                <span>0 %</span>
-                            </div>
-                            <hr />
-                            <div className="d-flex justify-content-between">
-                                <span className='fw-bold fs-5 ' style={{ color: "#79f" }} >To Pay</span>
-                                <span>$ {calculateTotalAmount()}</span>
-                            </div>
-                            <hr />
-                            <div className="d-flex justify-content-between">
-                                <input type="text" name='coupoun' placeholder='Apply Copoun' className={`form-group rounded-2 p-2 border-1 border-danger  mt-2 text-${isDarkMode ? "white" : "black"}`} />
-                            </div>
-                            <button className="btn btn-primary btn-sm  mt-3">Apply Coupon</button>
                             <div className="text-end mt-3">
                             </div>
                         </div>
+
                         <div className="mt-4">
                             <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
                                 <div className="card-body">
                                     <h5 className="card-title">Address</h5>
                                     <select
                                         className="form-select"
-                                        value={currentAddress.AddressID}
-                                        onChange={(e) => setCurrentAddress(e.target.value)}
+                                        value={currentAddress.AddressID} // Set value to the AddressID of the current address
+                                        onChange={(e) => setCurrentAddress(addresses.find(address => address.AddressID === parseInt(e.target.value)))} // Update currentAddress based on the selected option
                                     >
                                         {addresses.map((address, index) => (
                                             <option key={index} value={address.AddressID}>
@@ -314,10 +566,12 @@ const Cart = () => {
                                             </option>
                                         ))}
                                     </select>
+
                                     <button className="btn btn-danger mt-4 btn-sm" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page" onClick={handleConfirmAddress}>
                                         Add New Address
                                     </button>
                                 </div>
+
                             </div>
                             {/* address modal  */}
                             <div className="modal fade" id="exampleModal" tabIndex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
@@ -372,7 +626,8 @@ const Cart = () => {
                                         name="orderNote"
                                         id="orderNote"
                                         value={orderNote}
-                                        onChange={(e) => setorderNote(e.target.value)} />
+                                        onChange={(e) => setorderNote(e.target.value ? e.target.value : 'No Instruction')}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -389,27 +644,40 @@ const Cart = () => {
                     <DialogTitle>Order Summary</DialogTitle>
                     <DialogContent>
                         <div>
+
                             <h4>Selected Address:</h4>
-                            {/* <p>{currentAddress}</p> */}
+                            <p>
+                                {currentAddress && `${currentAddress.StreetAddress}, ${currentAddress.City}, ${currentAddress.State}, ${currentAddress.PostalCode}, ${currentAddress.Country}`}
+                            </p>
+
                         </div>
                         <div>
                             <h4>Payment Method:</h4>
-                            {/* <p>{paymentMethod}</p> */}
+                            <p>{paymentMethod === 'online' ? 'Online' : 'Cash on Delivery'}</p>
                         </div>
                         <table className="table">
                             <thead>
                                 <tr>
                                     <th>Item Name</th>
+                                    <th>Addtions</th>
                                     <th>Quantity</th>
-                                    <th>Total</th>
+                                    {/* <th>Total</th> */}
                                 </tr>
                             </thead>
                             <tbody>
                                 {cartItems.map((item, index) => (
                                     <tr key={index}>
-                                        <td>{item.Name}</td>
+                                        <td>{item.Title}
+                                            {item.selectedSize && <small className='me-2'>-({item.selectedSize.size}) </small>}
+                                        </td>
+                                        <td>
+                                            {item.selectedAdditions && item.selectedAdditions.length > 0 &&
+                                                item.selectedAdditions.map((addition, idx) => (
+                                                    <span key={idx} className='me-2'>{addition.selection}</span>
+                                                ))
+                                            }
+                                        </td>
                                         <td>{item.quantity}</td>
-                                        <td>{item.Price * item.quantity}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -417,7 +685,7 @@ const Cart = () => {
                         <div className="d-flex justify-content-end">
                             <TextField
                                 label="Total Amount"
-                                value={calculateTotalAmount()}
+                                value={totalAmount}
                                 variant="outlined"
                                 disabled
                             />

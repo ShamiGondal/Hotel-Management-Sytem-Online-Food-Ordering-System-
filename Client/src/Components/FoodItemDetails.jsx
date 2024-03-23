@@ -18,7 +18,7 @@ const FoodItemDetails = () => {
     const [mainImage, setMainImage] = useState(null);
     const [reviewText, setReviewText] = useState('');
     const [rating, setRating] = useState(0);
-    const { addToCart } = useCartContext();
+    const { addToCart , addSingleItemToCart} = useCartContext();
     const [item, setItem] = useState(null);
     const [sizes, setsizes] = useState([])
     const [specialSelection, setspecialSelection] = useState([])
@@ -28,6 +28,17 @@ const FoodItemDetails = () => {
     const [imageSrc, setimageSrc] = useState([])
     const [addons, setAddons] = useState([]);
     const [isLoading, setIsLoading] = useState(true); // Add loading state
+    const [previousMainImage, setPreviousMainImage] = useState(null);
+    const [selectedSizes, setSelectedSizes] = useState([]);
+    const [selectedSize, setSelectedSize] = useState(null);
+    const [selectedAdditions, setSelectedAdditions] = useState([]); // State for selected additions
+    const [TotalPrice, setTotalPrice] = useState(0); // State for total price
+    // const [mainImage, setMainImage] = useState(null);
+
+    // const updateMainImage = (image) => {
+    //     setPreviousMainImage(mainImage); // Store the previous main image
+    //     setMainImage(image); // Set the clicked image as the main image
+    // };
 
 
     useEffect(() => {
@@ -168,8 +179,9 @@ const FoodItemDetails = () => {
         return <div>Loading...</div>;
     }
 
-    const updateMainImage = (src) => {
-        setMainImage(src);
+    const updateMainImage = (image) => {
+        setPreviousMainImage(mainImage); // Store the previous main image
+        setMainImage(image);
     };
 
 
@@ -189,22 +201,69 @@ const FoodItemDetails = () => {
 
 
 
+    const handleAdditionChange = (e, item) => {
+        const { checked } = e.target;
+        const additionPrice = parseFloat(item.price); // Parse the price to ensure it's a number
+
+        // Handle additions
+        if (checked) {
+            if (!selectedAdditions.includes(item)) { // Check if the item is already selected
+                setSelectedAdditions([...selectedAdditions, item]);
+                setTotalPrice(prevTotal => prevTotal + additionPrice); // Add the price of the selected addition
+            }
+        } else {
+            setSelectedAdditions(selectedAdditions.filter(addition => addition !== item));
+            setTotalPrice(prevTotal => prevTotal - additionPrice); // Subtract the price of the unselected addition
+        }
+
+        // Handle sizes
+        const sizePrice = parseFloat(selectedSize.price); // Assuming selectedSize contains the currently selected size object
+        if (sizePrice) {
+            if (checked) {
+                setTotalPrice(prevTotal => prevTotal + sizePrice); // Add the price of the selected size
+            } else {
+                setTotalPrice(prevTotal => prevTotal - sizePrice); // Subtract the price of the unselected size
+            }
+        }
+    };
+
+    const handleSizeChange = (e, item) => {
+        const { checked } = e.target;
+        if (checked) {
+            if (selectedSize !== item) {
+                setSelectedSize(item); // Set the selected size
+                setTotalPrice(parseFloat(item.price)); // Update total price with the price of the selected size
+            }
+        } else {
+            setSelectedSize(null); // Deselect the size
+            setTotalPrice(prevTotal => prevTotal - parseFloat(selectedSize.price)); // Subtract the price of the deselected size
+        }
+    };
+
+
+
+    // Calculate total price based on selected sizes
+    // const totalPrice = selectedSize ? selectedSize.price : '';
+
+
     return (
         <div className="d-flex align-items-center justify-content-center">
             <div className={`container mt-5 pt-5 bg-${isDarkMode ? 'dark' : 'white'} text-${isDarkMode ? 'light' : 'dark'}`}>
                 <div className="row">
                     <div className="col-md-6">
-                        <div className="main-image-container">
-                            <img src={mainImage ? mainImage : item.ImageURL} alt="Main Image" className="main-image img-fluid h-75 w-75 rounded-2 " />
-                        </div>
-                        <div className="row h-25 mt-2 ms-5 ">
-                            <div className="col-sm-6 mb-3 border-1 border border-dark btn  w-25 p-2 ">
-                                <img src={image1} className="small-image img-fluid " onClick={() => updateMainImage(image1)} />
+                        <div>
+                            <div className="main-image-container">
+                                <img src={mainImage ? mainImage : (Array.isArray(item.ImageURL) ? item.ImageURL[0] : item.ImageURL)} alt="Main Image" className="main-image img-fluid h-75 w-75 rounded-2 " />
                             </div>
-                            <div className="col-sm-6 mb-3 border-1 border border-dark btn  w-25 p-2  ms-2">
-                                <img src={image2} className="small-image img-fluid " onClick={() => updateMainImage(image2)} />
+                            <div className="row h-25 mt-2 ms-5 ">
+                                {item.ImageURL && Array.isArray(item.ImageURL) && item.ImageURL.map((image, index) => (
+                                    <div key={index} className={`col-sm-6 mb-3 border-1 border border-dark btn  w-25 p-2 ${index > 0 ? 'ms-2' : ''}`}>
+                                        <img src={image} className="small-image img-fluid" onClick={() => updateMainImage(image)} />
+                                    </div>
+                                ))}
                             </div>
                         </div>
+
                     </div>
                     <div className="col-md-6">
 
@@ -219,25 +278,43 @@ const FoodItemDetails = () => {
                                 fullSymbol={<i className="fas fa-star"></i>}
                             />
                             <h5 className={`fw-light fs-6   text-${isDarkMode ? 'light' : 'dark'} `}>{item.Description}</h5>
-                            <p>Price <span className='ms-4 fw-medium'>${item.Price}</span></p>
+                            <p>Total: <span className='ms-4 fw-medium'>${selectedSize ? TotalPrice : item.Price}</span></p>
 
                             {/* Dropdown for Sizes */}
                             <div className="mt-2" style={scrollableContainerStyle}>
-                                <h6 className="ms-3 mt-2 mb-2">{"Size *"}</h6> {/* Top heading */}
-                                {sizes && sizes.map((size, index) => (
+                                <h6 className="ms-3 mt-2 mb-2">{"Size and Price *"}</h6> {/* Top heading */}
+                                {sizes && sizes.map((item, index) => (
                                     <div key={index} className="mb-2">
-                                        <input className="form-check-input ms-3" type="checkbox" id={`size_${index}`} value={size} />
-                                        <label className="form-check-label ms-3" htmlFor={`size_${index}`}>{size}</label>
+                                        <input
+                                            className="form-check-input ms-3"
+                                            type="checkbox"
+                                            id={`size_${index}`}
+                                            value={item.size}
+                                            onChange={(e) => handleSizeChange(e, item)} // Only call handleSizeChange here
+                                            checked={selectedSize && selectedSize.size === item.size}
+                                        />
+
+
+                                        <label className="form-check-label ms-3" htmlFor={`size_${index}`}>{`${item.size} - $${item.price}`}</label>
                                     </div>
                                 ))}
                             </div>
+
                             {/* Dropdown for Special Instructions */}
                             <div className="mt-2" style={scrollableContainerStyle}>
                                 <h6 className="ms-3 mt-2 mb-2">{"Additions(Optional)"}</h6> {/* Top heading */}
-                                {specialSelection && specialSelection.map((selection, index) => (
+                                {specialSelection && specialSelection.map((item, index) => (
                                     <div key={index} className="mb-2">
-                                        <input className="form-check-input ms-3" type="checkbox" id={`selection_${index}`} value={selection} />
-                                        <label className="form-check-label ms-3" htmlFor={`selection_${index}`}>{selection}</label>
+                                        <input
+                                            className="form-check-input ms-3"
+                                            type="checkbox"
+                                            id={`size_${index}`}
+                                            value={item.selection}
+                                            onChange={(e) => handleAdditionChange(e, item)} // Pass the item to the handler
+                                        />
+                                        <label className="form-check-label ms-3" htmlFor={`size_${index}`}>
+                                            {`${item.selection} - $${item.price}`}
+                                        </label>
                                     </div>
                                 ))}
                             </div>
@@ -257,7 +334,7 @@ const FoodItemDetails = () => {
                                                         <h6 className="card-subtitle mb-2 text-muted fs-6 fst-italic me-3">{addon.Subtitle}</h6>
                                                     </div>
                                                     <p className="card-text fs-6 fst-italic me-3">Price: ${addon.Price}</p>
-                                                    <button className="btn btn-danger  btn-sm fst-italic me-3" onClick={() => addToCart(addon)}>Add</button>
+                                                    <button className="btn btn-danger  btn-sm fst-italic me-3" onClick={() => addSingleItemToCart(addon)}>Add</button>
                                                 </div>
                                                 <hr />
                                             </div>
@@ -268,7 +345,7 @@ const FoodItemDetails = () => {
 
 
                             <div className="w-auto">
-                                <button className="btn btn-outline-success mt-2" onClick={() => { addToCart(item) }}>Add to Cart</button>
+                                <button className="btn btn-outline-success mt-2" onClick={() => { addToCart(item, selectedSize, selectedAdditions) }}>Add to Cart</button>
                             </div>
                         </div>
 
@@ -286,11 +363,17 @@ const FoodItemDetails = () => {
                                 {popularDishes.slice(0, 4).map((item, index) => (
                                     <div key={index} className="col mb-3" >
                                         <div className={`card bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`} style={{ width: "17rem", cursor: "pointer" }} onClick={() => showDetails(item)}>
-                                            <img className="card-img-top" src={item.ImageURL} alt="Card image cap" />
+                                            {item.ImageURL && (
+                                                Array.isArray(item.ImageURL) ? (
+                                                    <img className="card-img-top rounded-top" src={item.ImageURL[0]} alt={`First Image`} />
+                                                ) : (
+                                                    <img className="card-img-top rounded-top" src={item.ImageURL} alt="Card image cap" />
+                                                )
+                                            )}
                                             <div className="card-body">
                                                 <h5 className="card-title">{item.Title}</h5>
                                                 <p className="card-text">{item.Subtitle}</p>
-                                                <a href="#" className="btn btn-primary btn-sm" onClick={() => addToCart(item)}>Re-Order</a>
+                                                <a href="#" className="btn btn-primary btn-sm" onClick={() => addSingleItemToCart(item)}>Re-Order</a>
                                             </div>
                                         </div>
                                     </div>
