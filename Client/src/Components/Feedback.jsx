@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Form, Button } from 'react-bootstrap';
 import Cookies from 'js-cookie';
 import { useDarkMode } from './Hooks/DarkModeContext';
+import StarRatings from 'react-star-ratings'; // Import StarRatings component
+import { toast } from 'react-toastify';
 
 function Feedback() {
     const [loggedIn, setLoggedIn] = useState(false);
@@ -48,6 +50,7 @@ function Feedback() {
                     setServiceRating(0);
                     setFoodRating(0);
                     setComment('');
+                    toast.success("Thanks for giving feedback")
                 } else {
                     // Error submitting feedback
                     console.error('Error submitting feedback');
@@ -57,60 +60,58 @@ function Feedback() {
                 console.error('Error submitting feedback:', error);
             });
     };
-    
 
-    if(isDarkMode){
-        document.body.style.backgroundColor = 'black'
-    }else{
-        document.body.style.backgroundColor = 'white'
-        
+    if (isDarkMode) {
+        document.body.style.backgroundColor = 'black';
+    } else {
+        document.body.style.backgroundColor = 'white';
     }
 
     return (
-       <div className={` pt-5`}>
-         <div className={` container mt-5`}>
-            <Form onSubmit={handleSubmit} className={`bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''} mt-5 p-5 rounded-5 bg-${isDarkMode ? 'dark' : 'light'}`}>
-                <Form.Group controlId="serviceRating">
-                    <Form.Label>Service Rating</Form.Label>
-                    <Form.Control
-                        type="number"
-                        min="0"
-                        max="5"
-                        value={serviceRating}
-                        onChange={(e) => setServiceRating(parseInt(e.target.value))}
-                        required
-                    />
-                </Form.Group>
+        <div className={`pt-5`}>
+            <div className={`container mt-5`}>
+                <Form onSubmit={handleSubmit} className={`bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''} mt-5 p-5 rounded-5 bg-${isDarkMode ? 'dark' : 'light'}`}>
+                    <Form.Group controlId="serviceRating  " className='d-flex flex-column'>
+                        <Form.Label>Service Rating</Form.Label>
+                        {/* Use StarRatings component for service rating */}
+                        <StarRatings
+                            rating={serviceRating}
+                            starRatedColor="gold"
+                            changeRating={(rating) => setServiceRating(rating)}
+                            numberOfStars={5}
+                            name='serviceRating'
+                        />
+                    </Form.Group>
 
-                <Form.Group controlId="foodRating">
-                    <Form.Label>Food Rating</Form.Label>
-                    <Form.Control
-                        type="number"
-                        min="0"
-                        max="5"
-                        value={foodRating}
-                        onChange={(e) => setFoodRating(parseInt(e.target.value))}
-                        required
-                    />
-                </Form.Group>
+                    <Form.Group controlId="foodRating" className='d-flex flex-column'>
+                        <Form.Label>Food Rating</Form.Label>
+                        {/* Use StarRatings component for food rating */}
+                        <StarRatings
+                            rating={foodRating}
+                            starRatedColor="gold"
+                            changeRating={(rating) => setFoodRating(rating)}
+                            numberOfStars={5}
+                            name='foodRating'
+                        />
+                    </Form.Group>
 
-                <Form.Group controlId="comment">
-                    <Form.Label>Comment</Form.Label>
-                    <Form.Control
-                        as="textarea"
-                        rows={3}
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        required
-                    />
-                </Form.Group>
+                    <Form.Group controlId="comment">
+                        <Form.Label>Comment</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            rows={3}
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            required
+                        />
+                    </Form.Group>
 
-                <Button variant="primary" type="submit" disabled={!loggedIn} className='mt-5'>
-                    Submit Feedback
-                </Button>
-            </Form>
+                    <Button variant="primary" type="submit" disabled={!loggedIn} className='mt-5'>
+                        Submit Feedback
+                    </Button>
+                </Form>
+            </div>
         </div>
-       </div>
     );
 }
 

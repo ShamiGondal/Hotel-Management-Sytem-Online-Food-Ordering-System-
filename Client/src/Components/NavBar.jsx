@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
@@ -275,36 +275,110 @@ const Navbar = () => {
         fetchAddresses();
     }, [isLoggedIn]);
 
-    // console.log(addresses.map(addr => addr.City));
+    const [showNotification, setShowNotification] = useState(false);
+    const notificationRef = useRef(null);
+    const [notifications, setNotifications] = useState([]); // State to hold notifications
+    const [unreadNotifications, setUnreadNotifications] = useState([]);
+
+    // Function to toggle notification box visibility
+    const toggleNotification = () => {
+        setShowNotification(prevState => !prevState);
+    };
+
+    const markNotificationAsRead = (notificationId) => {
+        // Mark notification as read in frontend state
+        console.log(notificationId)
+        setUnreadNotifications(prevNotifications => prevNotifications.filter(notification => notification.notificationId !== notificationId));
+    };
+    const playNotificationSound = () => {
+        const audio = new Audio('../assets/audios/notifications-sound-127856.mp3');
+        audio.play();
+    };
+
+    // playNotificationSound();
+    useEffect(() => {
+        const fetchCustomerNotifications = async () => {
+            try {
+                const token = Cookies.get('token')
+                const response = await fetch(`${localhost}/api/notifications/customer`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch customer notifications');
+                }
+
+                const data = await response.json();
+                setNotifications(data);
+                // Filter unread notifications
+                const unread = data.filter(notification => !notification.read);
+                setUnreadNotifications(data.reverse());
+                if (unread.length > 0) {
+                    playNotificationSound();
+                }
+
+            } catch (error) {
+                console.error('Error fetching customer notifications:', error);
+            }
+        };
+
+        // Call the function to fetch customer notifications
+        fetchCustomerNotifications();
+
+        // Poll for new notifications every 30 seconds
+        const notificationPollingInterval = setInterval(fetchCustomerNotifications, 30000);
+
+        return () => clearInterval(notificationPollingInterval); 
+
+    }, [isLoggedIn]);
+
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setShowNotification(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     return (
         <>
             <ToastContainer />
-            <nav className={`navbar navbar-expand-lg  fixed-top bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
-                <div className={`container-fluid `}>
+            <nav className={`navbar navbar-expand-lg fixed-top bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}    `}>
+                <div className="container-fluid">
                     <div className="navbar-brand d-flex gap-4">
                         <Button onClick={toggleDrawer}>
                             <i className="fa-solid fa-bars fw-bolder text-danger fs-4 "></i>
                         </Button>
                         <Link to="/"><i className="fa-solid fa-utensils fw-3 text-danger"></i></Link>
                         {isLoggedIn && addresses.length > 0 ? (
-                        addresses.map((address, index) => (
-                            <Link key={index} to="#" className="btn btn-danger d-none d-md-block btn-sm rounded-2 bg-transparent text-dark border-0" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
-                                <div>
-                                    <i className="fa-solid fa-location-dot text-danger me-2"></i>
-                                    {address && address.City && address.State && address.PostalCode && address.Country ? (
-                                        `${address.City}, ${address.State}, ${address.PostalCode}, ${address.Country}`
-                                    ) : (
-                                        "Pick Location"
-                                    )}
-                                </div>
+                            addresses.map((address, index) => (
+                                <Link key={index} to="#" className={`btn btn-danger d-none d-md-block btn-sm rounded-2 bg-transparent text-${isDarkMode ? "light" : "danger"} border-0`} type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
+                                    <div>
+                                        <i className="fa-solid fa-location-dot text-danger me-2"></i>
+                                        {address && address.City && address.State && address.PostalCode && address.Country ? (
+                                            `${address.City}, ${address.State}, ${address.PostalCode}, ${address.Country}`
+                                        ) : (
+                                            "Pick Location"
+                                        )}
+                                    </div>
 
+                                </Link>
+                            ))
+                        ) : (
+                            <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger  d-none d-md-block btn-sm rounded-2 bg-transparent  border-0" >
+                                <i className={`fa-solid fa-plus text-danger me-2"`}></i>{" Add Address"}
                             </Link>
-                        ))
-                    ) : (
-                        <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" >
-                            <i className="fa-solid fa-plus text-danger me-2"></i>{"Add Address"}
-                        </Link>
-                    )}
+                        )}
 
                     </div>
 
@@ -326,7 +400,7 @@ const Navbar = () => {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            marginRight: "180px",
+                                            marginRight: "260px",
                                             border: 'none',
                                             background: "transparent"
                                         }}
@@ -338,12 +412,9 @@ const Navbar = () => {
                                         </div>
                                         {/* Custom Menu */}
                                         <ul
-                                            className="custom-menu"
+                                            className={`custom-menu bg-${isDarkMode ? "dark" : "light"} text-${isDarkMode ? "light" : "dark"}`}
                                             style={{
-                                                position: 'absolute',
-                                                top: '100%',
                                                 left: 'calc(100% - 100px - 70px)', // Adjust the left position to create space from the right side
-                                                zIndex: 999,
                                                 width: '250px', // Set the width to your desired value
                                                 display: isMenuOpen ? 'block' : 'none',
                                                 flexDirection: 'column',
@@ -352,8 +423,9 @@ const Navbar = () => {
                                                 marginTop: '-9px',
                                                 listStyleType: 'none',
                                                 backgroundColor: '#fff',
-                                                boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.1)',
                                                 transition: 'all 0.3s ease-in-out',
+                                                position: 'absolute', top: '100%', right: 0, maxHeight: '300px', overflowY: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 999,
+
                                             }}
                                         >
 
@@ -374,9 +446,39 @@ const Navbar = () => {
                             <button onClick={() => navigate('/cart')} className="btn btn-outline-warning" style={{ marginRight: '0px' }}>
                                 <i className="fa-solid fa-cart-shopping"></i>
                             </button>
-                            <span className={`badge food-items-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`} style={{ position: 'absolute', top: -5, right: -10, marginRight: '0px' }}>
+                            <span className={`badge food-items-container  ${isDarkMode ? 'dark-mode' : 'light-mode'}`} style={{ position: 'absolute', top: -5, right: -10, marginRight: '0px' }}>
                                 {cartItems.length}
                             </span>
+                        </div>
+
+                        {/* Notification Icon with Badge */}
+                        <div style={{ position: 'relative' }}>
+                            <button className="btn bg-bg-transparent  text-danger " onClick={toggleNotification}>
+                                <i className="fa-solid fa-bell"></i>
+                            </button>
+                            {unreadNotifications.length > 0 && (
+                                <span className="badge bg-danger" style={{ position: 'absolute', top: '-10px', right: '-10px' }}>{unreadNotifications.length}</span>
+                            )}
+                            {showNotification && ( // Render the notification box when showNotification is true
+                                <div ref={notificationRef} className={`notification-box rounded-2 border-warning shadow-lg bg-${isDarkMode ? "dark" : "light"}`} style={{
+                                    position: 'absolute', top: '100%', right: 0, width: '300px', maxHeight: '300px', overflowY: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 999,
+                                }}>
+                                    {/* Notification content */}
+                                    {notifications.map((notification, index) => (
+                                        <div key={index}>
+                                            <div className={`p-4 fst-italic fw-light fs-6 text-${isDarkMode ? "light" : "dark"} `} onClick={() => markNotificationAsRead(notification.notification_id)} style={{ cursor: "pointer" }} >
+                                                <div className="d-flex justify-content-between ">
+                                                    <p>{notification.message}</p>
+                                                    <p className="text-danger fw-bold">{notification.type}</p>
+                                                </div>
+                                                <small>{new Date(notification.created_at).toLocaleString()}</small>
+                                            </div>
+                                            {index !== notifications.length - 1 && <hr className=" notification-divider" />}
+                                        </div>
+                                    ))}
+
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -414,10 +516,10 @@ const Navbar = () => {
             </div>
 
             <ul className={`nav justify-content-center d-md-none mt-5 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
-                <li className="nav-item mt-3 mb-2">
+                <li className="nav-item mt-3 mb-2 ">
                     {isLoggedIn && addresses.length > 0 ? (
                         addresses.map((address, index) => (
-                            <Link key={index} to="#" className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
+                            <Link key={index} to="#" className={`btn btn-danger btn-sm rounded-2  bg-transparent text-${isDarkMode ? "light": "danger"} border-0 z-3 `} type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
                                 <div>
                                     <i className="fa-solid fa-location-dot text-danger me-2"></i>
                                     {address && address.City && address.State && address.PostalCode && address.Country ? (
@@ -498,7 +600,7 @@ const Navbar = () => {
                                             </button>
 
                                             <ul
-                                                className={`custom-menu  `}
+                                               className={`bg-${isDarkMode ? "dark": "light"} custom-menu`}
                                                 style={{
                                                     position: 'absolute',
                                                     top: 'calc(50% - 200px)', // Adjust the calculation based on the desired distance from the top
@@ -515,9 +617,9 @@ const Navbar = () => {
                                                     transition: 'all 0.3s ease-in-out',
                                                 }}
                                             >
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer' }} onClick={() => handleMenuItemClick('My-Home')}><i className="fa-solid fa-gauge text-danger fs-5"></i> Dashboard</li>
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} onClick={handleSignOut}><i className="fa fa-sign-out text-danger" aria-hidden="true"></i> Sign Out</li>
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }}><i className="fa-solid fa-circle-info text-danger"></i> Help Center</li>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer' }} className={`text-${isDarkMode ? "light": "black"}`} onClick={() => handleMenuItemClick('My-Home')}><i className="fa-solid fa-gauge text-danger fs-5"></i> Dashboard</li>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} className={`text-${isDarkMode ? "light": "dark"}`} onClick={handleSignOut}><i className="fa fa-sign-out text-danger" aria-hidden="true"></i> Sign Out</li>
+                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} className={`text-${isDarkMode ? "light": "dark"}`}><i className="fa-solid fa-circle-info text-danger"></i> Help Center</li>
                                             </ul>
 
 
@@ -561,13 +663,6 @@ const Navbar = () => {
 
 
                 </Drawer>
-
-                {selectedMenuItem === 'Login' && <CustomerLogin />}
-                {selectedMenuItem === 'Reservations' && <Reservations />}
-                {selectedMenuItem === 'Complaints' && <Complaints />}
-                {selectedMenuItem === 'Feedbacks' && <Feedbacks />}
-                {selectedMenuItem === 'PrivacyPolicy' && <PrivacyPolicy />}
-
             </div>
             <Outlet />
 

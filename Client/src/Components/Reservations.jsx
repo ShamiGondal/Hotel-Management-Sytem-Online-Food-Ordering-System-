@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import { Form, Button, Container, Row, Col } from 'react-bootstrap';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useDarkMode } from './Hooks/DarkModeContext';
 import Cookies from 'js-cookie';
+import sendNotification from './NotificationSender';
 
 function Reservation() {
     const [reservationID, setReservationID] = useState(generateReservationID());
@@ -13,12 +14,11 @@ function Reservation() {
     const [status, setStatus] = useState('Pending');
     const [loggedIn, setLoggedIn] = useState(false);
 
-    const localhost = `http://localhost:4000`
+    const localhost = `http://localhost:4000`;
 
     useEffect(() => {
         // Check if user is logged in
         const token = Cookies.get('token');
-        console.log(token)
         if (token) {
             setLoggedIn(true);
         } else {
@@ -26,7 +26,6 @@ function Reservation() {
             window.location.href = '/login';
         }
     }, []);
-
 
     function generateReservationID() {
         const digits = '0123456789';
@@ -53,6 +52,7 @@ function Reservation() {
             const data = await response.json();
             if (response.ok) {
                 toast.success(data.message);
+                sendNotification('reservation', 'Your Reservation has been placed!');
             } else {
                 toast.error(data.error);
             }
@@ -62,55 +62,52 @@ function Reservation() {
         }
     };
 
-    if (isDarkMode) {
-        document.body.style.backgroundColor = 'black';
-    } else {
-        document.body.style.backgroundColor = 'white';
-    }
-
     return (
+        <Container className="mt-5 pt-5">
+            <Row className="justify-content-center">
+                <Col xs={12} md={8} lg={6}>
+                    <div className={`p-5 container bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}`}>
+                        <h2 className="mb-4 text-center">Make a Reservation</h2>
+                        <Form onSubmit={handleSubmit}>
+                            <Form.Group controlId="reservationID">
+                                <Form.Label>Reservation ID</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={reservationID}
+                                    readOnly
+                                />
+                            </Form.Group>
 
-        <div className=" mt-5 pt-5  ">
-            <div className={`p-5 mt-5 pt-5 container bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}  `}>
-            <h2 className="mb-4">Make a Reservation</h2>
-            <Form onSubmit={handleSubmit}>
-                <Form.Group controlId="reservationID">
-                    <Form.Label>Reservation ID</Form.Label>
-                    <Form.Control
-                        type="text"
-                        value={reservationID}
-                        readOnly
-                    />
-                </Form.Group>
+                            <Form.Group controlId="reservationDate">
+                                <Form.Label>Reservation Date</Form.Label>
+                                <Form.Control
+                                    type="date"
+                                    value={reservationDate}
+                                    onChange={(e) => setReservationDate(e.target.value)}
+                                    required
+                                />
+                            </Form.Group>
 
-                <Form.Group controlId="reservationDate">
-                    <Form.Label>Reservation Date</Form.Label>
-                    <Form.Control
-                        type="date"
-                        value={reservationDate}
-                        onChange={(e) => setReservationDate(e.target.value)}
-                        required
-                    />
-                </Form.Group>
+                            <Form.Group controlId="noOfTables">
+                                <Form.Label>No. of Tables</Form.Label>
+                                <Form.Control
+                                    type="number"
+                                    min="1"
+                                    value={noOfTables}
+                                    onChange={(e) => setNoOfTables(parseInt(e.target.value))}
+                                    required
+                                />
+                            </Form.Group>
 
-                <Form.Group controlId="noOfTables">
-                    <Form.Label>No. of Tables</Form.Label>
-                    <Form.Control
-                        type="number"
-                        min="1"
-                        value={noOfTables}
-                        onChange={(e) => setNoOfTables(parseInt(e.target.value))}
-                        required
-                    />
-                </Form.Group>
-
-                <Button variant="primary" type="submit">
-                    Submit Reservation
-                </Button>
-            </Form>
-            <ToastContainer />
-        </div>
-        </div>
+                            <Button variant="primary" type="submit" className="w-100 mt-4">
+                                Submit Reservation
+                            </Button>
+                        </Form>
+                        <ToastContainer />
+                    </div>
+                </Col>
+            </Row>
+        </Container>
     );
 }
 

@@ -49,7 +49,7 @@ CREATE TABLE Orders (
     CustomerID INT,
     OrderDate DATE,
     OrderTime TIME, -- Added Time Attribute
-    OrderNote VARCHAR(100),
+    OrderNote VARCHAR(100) DEFAULT NULL,
     PaymentStatus VARCHAR(50) CHECK (PaymentStatus IN ('Pending', 'Confirmed', 'Rejected')),
     TotalAmount DECIMAL(10, 2),
     Status VARCHAR(50) CHECK (Status IN ('Pending', 'Confirmed', 'Rejected')),
@@ -139,22 +139,32 @@ CREATE TABLE Complaints (
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
--- Notifications Table
-CREATE TABLE Notifications (
-    NotificationID INT AUTO_INCREMENT PRIMARY KEY,
-    NotificationType VARCHAR(100) NOT NULL,
-    NotificationMessage TEXT NOT NULL,
-    IsPublic BOOLEAN NOT NULL DEFAULT 0, -- Indicates if the notification is public (visible to all) or private
-    CustomerID INT DEFAULT NULL, -- CustomerID will be NULL for public notifications
+-- Table for notifications
+CREATE TABLE notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('order', 'complaint', 'reservation') NOT NULL,
+    message TEXT NOT NULL,
+    CustomerID INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
 
--- AdminNotifications Table
-CREATE TABLE AdminNotifications (
-    NotificationID INT AUTO_INCREMENT PRIMARY KEY,
-    NotificationType ENUM('Order', 'Reservation', 'Complaint', 'Feedback') NOT NULL,
-    NotificationMessage TEXT NOT NULL
+-- Table for promotion notifications
+CREATE TABLE promotion_notifications (
+    notification_id INT AUTO_INCREMENT PRIMARY KEY,
+    type ENUM('generic', 'promotion') NOT NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+
+CREATE TABLE coupons (
+    couponID INT AUTO_INCREMENT PRIMARY KEY,
+    couponCode VARCHAR(50) UNIQUE NOT NULL,
+    status ENUM('active', 'inactive') NOT NULL,
+    CopounDiscountAmount DECIMAL(10, 2)
+);
+
 
 -- Create Report Table
 CREATE TABLE Report (

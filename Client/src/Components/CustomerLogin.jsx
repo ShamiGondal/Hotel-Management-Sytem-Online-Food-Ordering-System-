@@ -54,7 +54,6 @@ const CustomerLogin = () => {
         document.body.style.backgroundColor = 'white'
 
     }
-    // document.body.style.backgroundImage = "url('../assets/brooke-lark-wMzx2nBdeng-unsplash.jpg')";
 
     useEffect(() => {
         const token = Cookies.get('token');
@@ -84,9 +83,14 @@ const CustomerLogin = () => {
                                 <input type="checkbox" className="form-check-input" id="rememberMe" />
                                 <label className="form-check-label" htmlFor="rememberMe">Remember me</label>
                             </div>
-                            <button type="submit" className="btn btn-success w-100 mb-3">Login</button>
+                            <button type="submit" className="btn btn-danger w-100 mb-3">Login</button>
                             <p className="text-center mb-0">Don't have an account? <Link to="/Signup">Create a new account</Link></p>
                         </form>
+                        <div className="mt-3 text-center">
+                                {/* Google login and signup options */}
+                                <p className="mt-3 mb-2">OR</p>
+                                <button className={`btn p-3 me-2 text-${isDarkMode? "light": "dark"}`} onClick={()=> toast("Oops... Try Siginig up with Credentials")}><i className="fa-brands fa-google text-danger "></i> Google</button>
+                            </div>
                     </div>
                 </div>
             </div>

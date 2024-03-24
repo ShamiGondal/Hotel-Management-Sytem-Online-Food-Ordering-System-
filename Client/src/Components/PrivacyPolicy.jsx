@@ -1,42 +1,36 @@
-import React from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 import { useDarkMode } from './Hooks/DarkModeContext';
 
 const PrivacyPolicy = () => {
+    const { isDarkMode } = useDarkMode();
 
-    const {isDarkMode} = useDarkMode();
-
-    if (isDarkMode) {
-        document.body.style.backgroundColor = 'black';
-    } else {
-        document.body.style.backgroundColor = 'white';
-    }
     return (
-        <div className=" mt-5 pt-5 mb-4">
-            <div className={`container privacy-policy  mt-5 p-5  bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}  `}>
-            <h1 className="privacy-policy__title ">Privacy Policy</h1>
-            <div className="privacy-policy__content">
-                <p>
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi. Duis auctor dui non neque
-                    fermentum, nec scelerisque metus rutrum. Vestibulum ante ipsum primis in faucibus orci luctus et
-                    ultrices posuere cubilia curae; Fusce vel magna mauris. Integer eget eros ligula. Curabitur dictum
-                    metus id nisl consequat dictum. Sed fermentum eleifend sapien ut posuere. Quisque euismod mi eu orci
-                    convallis, sed scelerisque nulla tincidunt. In hac habitasse platea dictumst. Sed vehicula interdum
-                    risus, eu aliquet velit venenatis non. Sed tempus, libero ut vestibulum congue, mauris nunc ultrices
-                    ipsum, et ullamcorper odio sapien vel est. Nulla nec felis dapibus, dapibus lacus nec, elementum
-                    ipsum. Vestibulum ac dui eu nisl ultricies suscipit.
-                </p>
-                <p>
-                    Quisque id commodo enim. Phasellus finibus turpis sit amet luctus ullamcorper. Suspendisse nec felis
-                    vel mi mollis consectetur. Curabitur nec tincidunt ligula. Donec nec semper arcu. Nulla nec nunc sit
-                    amet magna ultrices vehicula. Proin sed nisl faucibus, varius lorem a, dignissim tortor. Maecenas ut
-                    vestibulum eros. Sed eget est vel purus faucibus posuere in in metus. Cras nec tortor vel justo
-                    posuere placerat. Ut eu lacus id mauris tincidunt ultrices nec nec enim. Maecenas egestas aliquam
-                    lectus, nec ultricies mi posuere at. Duis quis turpis nec nulla placerat convallis. Fusce non diam a
-                    metus fermentum interdum.
-                </p>
-            </div>
-        </div>
-        </div>
+        <Container className="mt-5 pt-5">
+            <Row className="justify-content-center">
+                <Col xs={12} md={8} lg={6}>
+                    <div className={`p-5 container bg-${isDarkMode ? 'dark' : 'light'} rounded-3 shadow ${isDarkMode ? 'text-light' : 'text-dark'}`}>
+                        <h2 className="text-center mb-4">Privacy Policy</h2>
+                        <h4>Introduction</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam pulvinar risus non mattis lacinia. Nulla facilisi. Cras venenatis faucibus magna, quis tempor eros commodo sit amet.</p>
+                        
+                        <h4>Collection of Personal Information</h4>
+                        <p>Etiam fermentum, arcu nec auctor gravida, libero est fermentum leo, vel aliquam tellus mi id risus. Nulla facilisi. Cras venenatis faucibus magna, quis tempor eros commodo sit amet.</p>
+
+                        <h4>Use of Personal Information</h4>
+                        <p>Proin ac eros vestibulum, dapibus velit vel, eleifend sem. Duis efficitur fringilla felis, in luctus neque. Duis aliquet id quam id congue.</p>
+
+                        <h4>Security of Personal Information</h4>
+                        <p>Praesent sit amet tellus lectus. Nam malesuada nisi id turpis aliquet, nec ultricies orci sodales. Donec in ligula nec erat hendrerit elementum.</p>
+
+                        <h4>Changes to This Privacy Policy</h4>
+                        <p>Sed efficitur, sem non viverra commodo, metus lacus varius est, vel hendrerit libero nisi nec turpis. Nullam ac commodo velit, id pulvinar nunc.</p>
+
+                        <h4>Contact Us</h4>
+                        <p>For any questions or concerns regarding our privacy policy, please contact us at privacy@example.com.</p>
+                    </div>
+                </Col>
+            </Row>
+        </Container>
     );
 };
 

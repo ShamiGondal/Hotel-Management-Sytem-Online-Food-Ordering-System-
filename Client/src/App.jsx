@@ -17,6 +17,7 @@ import Home from './Components/Home'
 import { CartProvider } from './Components/Hooks/useCart'
 import PaymentForm from './Components/PaymentForm'
 import FoodItemDetails from './Components/FoodItemDetails'
+import ErrorPage from './Components/ErrorPage'
 
 
 function App() {
@@ -28,24 +29,26 @@ function App() {
             <Routes>
               {/* Admin Routes */}
               {/* Customer Routes */}
-              <Route path={'/'} element={<Navbar />}>
-                <Route path={'/'} element={<DisplayingFoodItems />} />
-                <Route path={'/Login'} element={<CustomerLogin />} />
-                <Route path={'/Signup'} element={<CustomerSignup />} />
-                <Route path={'/Reservations'} element={<Reservations />} />
-                <Route path={'/Feedbacks'} element={<Feedback />} />
-                <Route path={'/Complaints'} element={<Complaints />} />
-                <Route path={'/Store-Locator'} element={<StoreLocator />} />
-                <Route path={'/Track-Order'} element={<TrackOrder />} />
-                <Route path={'/PrivacyPolicy'} element={<PrivacyPolicy />} />
-                <Route path={'/My-Home'} element={<Home />} />
-                <Route path={'/cart'} element={<Cart />} />
-                <Route path={'/FoodMenu'} element={<FoodMenu />} />
-                <Route path={'/Payment'} element={<PaymentForm/>} />
-                <Route path={'/FoodItemDetails/:id'} element={<FoodItemDetails/>} />
+              <Route path="/" element={<Navbar />}>
+                <Route path="/" element={<DisplayingFoodItems />} />
+                <Route path="/Login" element={<CustomerLogin />} />
+                <Route path="/Signup" element={<CustomerSignup />} />
+                <Route path="/Reservations" element={<Reservations />} />
+                <Route path="/Feedbacks" element={<Feedback />} />
+                <Route path="/Complaints" element={<Complaints />} />
+                <Route path="/Store-Locator" element={<StoreLocator />} />
+                <Route path="/Track-Order" element={<TrackOrder />} />
+                <Route path="/PrivacyPolicy" element={<PrivacyPolicy />} />
+                <Route path="/My-Home" element={<Home />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/FoodMenu" element={<FoodMenu />} />
+                <Route path="/Payment" element={<PaymentForm />} />
+                <Route path="/FoodItemDetails/:id" element={<FoodItemDetails />} />
+                {/* Error route (should be at the end) */}
               </Route>
-
+              <Route component={ErrorPage} />
             </Routes>
+
           </DarkModeProvider>
         </CartProvider>
       </BrowserRouter>

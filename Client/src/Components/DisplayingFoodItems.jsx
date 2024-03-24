@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
-import image1 from '../assets/image4.jpeg'
-import image2 from '../assets/italain image2.jpg'
-import image3 from '../assets/Pakistani+cuision.png'
+import image1 from '../assets/carsouleImge_1.png'
+import image2 from '../assets/carsouleImge_2.jpg'
+import image3 from '../assets/carsouleImge_3.jpg'
 import asside1 from '../assets/aside1.jpg'
 import asside2 from '../assets/aside2.jpg'
-import item1 from '../assets/item2.webp'
-import item2 from '../assets/item4.jpg'
-import item3 from '../assets/item5.webp'
-import item4 from '../assets/item6.jpg'
-import item5 from '../assets/item1.webp'
+// import item1 from '../assets/item2.webp'
+// import item2 from '../assets/item4.jpg'
+// import item3 from '../assets/item5.webp'
+// import item4 from '../assets/item6.jpg'
+// import item5 from '../assets/item1.webp'
 import Rating from 'react-rating';
-import { useSelector, useDispatch } from 'react-redux';
-import { fetchFoodItemsStart, fetchFoodItemsSuccess, fetchFoodItemsFailure } from '../Store/Slice/FoodItemSlice';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDarkMode } from './Hooks/DarkModeContext';
-import Cart from './Cart';
+// import Cart from './Cart';
 import FoodLoader from './FoodLoader';
 import { useCartContext } from './Hooks/useCart';
 import Cookies from 'js-cookie';
@@ -23,12 +21,7 @@ import Cookies from 'js-cookie';
 
 
 function DisplayingFoodItems() {
-    //TODO : Need to change button to remove from cart after adding to card , 
-    //TODO: Have to fetch the last three prev order of customer and display them , for that need to understand the orderTables in database
-    //TODO : Main issue of ceatogries buttons are not working , even not getting properly displayed
-
-    // const loading = useSelector(state => state.foodItems.loading);
-    // const error = useSelector(state => state.foodItems.error);
+   
     const [isLoading, setIsLoading] = useState(true);
     const { isDarkMode } = useDarkMode();
     const { addToCart } = useCartContext();
@@ -47,16 +40,10 @@ function DisplayingFoodItems() {
 
 
     const navigate = useNavigate();
-    // useEffect(() => {
-    //     dispatch(fetchFoodItemsStart());
-    //     fetch('http://localhost:4000/api/getFoodItems')
-    //         .then(response => response.json())
-    //         .then(data => dispatch(fetchFoodItemsSuccess(data)))
-    //         .catch(error => dispatch(fetchFoodItemsFailure(error.message)));
-    //     setIsLoading(false)
-    // }, [dispatch]);
 
-    const getUniqueCategories = () => {
+
+
+    const getUniqueCategories = (foodItems) => {
         const uniqueCategories = [];
         foodItems.forEach(item => {
             if (!uniqueCategories.includes(item.Category)) {
@@ -66,28 +53,9 @@ function DisplayingFoodItems() {
         return uniqueCategories;
     };
 
-    const categories = getUniqueCategories();
-    const [currentIndex, setCurrentIndex] = useState(0);
+    const categories = getUniqueCategories(foodItems); // Assuming foodItems is your data array
+   
 
-    const handleNext = () => {
-        setCurrentIndex((prevIndex) => {
-            if (prevIndex === categories.length - 1) {
-                return 0;
-            } else {
-                return prevIndex + 1;
-            }
-        });
-    };
-
-    const handlePrevious = () => {
-        setCurrentIndex((prevIndex) => {
-            if (prevIndex === 0) {
-                return categories.length - 1;
-            } else {
-                return prevIndex - 1;
-            }
-        });
-    };
 
 
     // Function to add item to cart
@@ -111,14 +79,6 @@ function DisplayingFoodItems() {
         image1,
         image2,
         image3
-
-    ];
-    const items = [
-        item1,
-        item2,
-        item3,
-        item4,
-        item5
 
     ];
     const pastOrdershandle = () => {
@@ -203,31 +163,25 @@ function DisplayingFoodItems() {
                             <h4 className='mt-3 fw-medium  '>Browse by Cetogries </h4>
                             <button className='mt-3  text-danger  bg-transparent border-0  border fw-medium ' onClick={handleseeCetogries}>see all Cetogries </button>
                         </div>
-                        <div className=" d-flex position-relative justify-content-between  ">
-                            <div className="navigation_left d-none d-md-block">
-                                <button className="btn btn-light bg-transparent border-0 " onClick={handlePrevious}><i className="fa-solid fa-circle-chevron-left text-danger fs-3"></i></button>
-                            </div>
-                            <div className="container category-carousel">
-                                <div className="categories   ">
-                                    {categories.map((category, index) => (
-                                        <div key={index} className={`category-item-wrapper  `}>
-                                            <button
-                                                id='categoryCard'
-                                                onClick={() => navigate('/FoodMenu')}
-                                                className={`category-item ${index === currentIndex ? 'active' : ''} bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}
-                                            >
-                                                <img src={images[index % images.length]} className="d-block rounded-circle" alt="..." style={{ width: '140px', height: '130px' }} />
-                                            </button>
-                                            <div className="text-center">
-                                                <h5 className='fs-6 fw-light text-body-emphasis '>{category}</h5>
-
+                        <div className="d-flex position-relative justify-content-center">
+                            <div className="categories-wrapper" style={{ width: '75%' }}>
+                                <div className="categories-scrollable">
+                                    <div className="d-flex flex-nowrap overflow-auto">
+                                        {categories.map((category, index) => (
+                                            <div key={index} className="category-item-wrapper me-3">
+                                                <div
+                                                    onClick={() => navigate('/FoodMenu')} style={{cursor : "pointer"}}
+                                                    className={`category-item bg-${isDarkMode ? 'dark' : 'light'} food-items-container ${isDarkMode ? 'dark-mode' : ''}`}
+                                                >
+                                                    <img src={images[index % images.length]} className="d-block rounded-circle" alt="..." style={{ width: '140px', height: '130px' }} />
+                                                </div>
+                                                <div className="text-center">
+                                                    <h5 className='fs-6 fw-light text-body-emphasis'>{category}</h5>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="navigation_right d-none d-md-block">
-                                <button className="btn btn-light bg-transparent border-0 " onClick={handleNext}><i className="fa-solid fa-circle-chevron-right text-danger fs-3 "></i></button>
                             </div>
                         </div>
 
@@ -301,7 +255,7 @@ function DisplayingFoodItems() {
                                 <div className="col-12 col-md-9">
                                     <div className="container">
                                         <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 row-cols-xl-3 g-4">
-                                            {foodItems.slice(0, 6).map((foodItem, index) => (
+                                            {foodItems.slice(0, 6).map((foodItem) => (
                                                 <button
                                                     className="border-0 bg-transparent"
                                                     onClick={() => showDetails(foodItem)}

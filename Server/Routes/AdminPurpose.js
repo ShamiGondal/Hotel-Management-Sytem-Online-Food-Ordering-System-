@@ -360,4 +360,73 @@ Router.get('/reports', async (req, res) => {
 });
 
 
+// Endpoint to add a notification to both tables
+Router.post('/notifications', async (req, res) => {
+    try {
+        const { type, message, customer_id } = req.body;
+        
+        // Insert into notifications table
+        const [notificationResult] = await pool.promise().query('INSERT INTO notifications (type, message, CustomerID) VALUES (?, ?, ?)', [type, message, customer_id]);
+        const notificationId = notificationResult.insertId;
+
+        // Insert into promotion_notifications table if type is 'promotion' or 'generic'
+        if (type === 'promotion' || type === 'generic') {
+            await pool.promise().query('INSERT INTO promotion_notifications (notification_id, type, message) VALUES (?, ?, ?)', [notificationId, type, message]);
+        }
+
+        res.status(201).json({ message: 'Notification added successfully' });
+    } catch (error) {
+        console.error("Error adding notification:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Endpoint to fetch all notifications from the notifications table
+Router.get('/notifications', async (req, res) => {
+    try {
+        const [rows] = await pool.promise().query('SELECT * FROM notifications');
+        res.json(rows);
+    } catch (error) {
+        console.error("Error fetching notifications:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Endpoint to fetch customer-related notifications using customer_id
+Router.get('/notifications/customer', fetchUser, async (req, res) => {
+    try {
+        const customerId = req.user;
+        const [rows] = await pool.promise().query('SELECT * FROM notifications WHERE CustomerID = ?', customerId);
+        res.json(rows);
+    } catch (error) {
+        console.error("Error fetching customer notifications:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+// Endpoint to fetch all notifications from the promotion_notifications table
+Router.get('/notifications/promotions', async (req, res) => {
+    try {
+        const [rows] = await pool.promise().query('SELECT * FROM promotion_notifications');
+        res.json(rows);
+    } catch (error) {
+        console.error("Error fetching promotion notifications:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+Router.post('/notifications/promotions', async (req, res) => {
+    try {
+        const { type, message } = req.body;
+        const [result] = await pool.promise().query('INSERT INTO promotion_notifications (type, message) VALUES (?, ?)', [type, message]);
+        const newNotification = { notification_id: result.insertId, type, message };
+        res.status(201).json(newNotification);
+    } catch (error) {
+        console.error("Error creating promotion notification:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
+
 module.exports = Router;

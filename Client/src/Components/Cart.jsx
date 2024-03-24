@@ -11,6 +11,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useStripe } from '@stripe/react-stripe-js';
+import sendNotification from '../Components/NotificationSender'; // Correct import path
+
 
 
 const stripePromise = loadStripe('pk_test_51OINxgHgDxyW6XeqfBylUJikmmt49IPUqxlJazRsB9efRzOr0LvTlHGE13BwhNad29rn2dbTF8vgNZcFMhiyHlPf00Rk3E7pCN');
@@ -98,68 +100,11 @@ const Cart = () => {
 
     const [orderNote, setorderNote] = useState([])
 
-    // const handleOrderSubmit = async () => {
-    //     try {
-    //         const token = Cookies.get("token");
-    //         if (!token) {
-    //             navigate('/Login');
-    //         } else {
-    //             const orderId = generateRandomOrderId(); // Generate order ID here
-    //             const response = await fetch(`${localhost}/api/placeOrder`, {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json',
-    //                     'Authorization': `${token}`
-    //                 },
-    //                 body: JSON.stringify({
-    //                     orderId: orderId,
-    //                     orderItems: cartItems.map(item => ({
-    //                         foodItemID: item.FoodItemID,
-    //                         quantity: item.quantity,
-    //                         subtotal: totalAmount // Update subtotal calculation
-    //                     })),
-    //                     paymentStatus: 'Pending',
-    //                     status: 'Pending',
-    //                     orderNote: orderNote
-    //                 }),
-    //             });
-
-    //             const data = await response.json();
-    //             console.log('Order placed successfully:', data);
-    //             toast.success('Order placed successfully');
-
-    //             // Calculate total amount
-    //             // const totalAmount = cartItems.reduce((total, item) => total + (item.quantity * item.Price), 0);
-
-    //             if (paymentMethod === 'online') {
-    //                 const paymentResponse = await fetch(`${localhost}/api/addPayment`, {
-    //                     method: 'POST',
-    //                     headers: {
-    //                         'Content-Type': 'application/json',
-    //                         'Authorization': `${token}`
-    //                     },
-    //                     body: JSON.stringify({
-    //                         orderId: orderId,
-    //                         amount: totalAmount.toFixed(2) // Send total amount for online payment
-    //                     }),
-    //                 });
-    //                 const paymentData = await paymentResponse.json();
-    //                 console.log('Payment added successfully:', paymentData);
-    //                 handleStripePayment(); // Call function to initiate Stripe payment AFTER adding payment
-    //             } else {
-    //                 clearCart();
-    //                 setOpenDialog(false);
-    //             }
-    //         }
-    //     } catch (error) {
-    //         console.error('Error placing order:', error);
-    //     }
-    // };
-
-
     const handleOrderSubmit = async () => {
         try {
-            const token = Cookies.get("token");
+            const token = Cookies.get('token');
+
+            // console.log("customer ID ok ", customerId)
             if (!token) {
                 navigate('/Login');
             } else {
@@ -173,7 +118,7 @@ const Cart = () => {
                     body: JSON.stringify({
                         orderId: orderId,
                         orderItems: cartItems.map(item => ({
-                            foodItemID: item.FoodItemID ? item.FoodItemID : item.AddonID, 
+                            foodItemID: item.FoodItemID ? item.FoodItemID : item.AddonID,
                             quantity: item.quantity,
                             subtotal: totalAmount // Update subtotal calculation
                         })),
@@ -186,6 +131,7 @@ const Cart = () => {
                 const data = await response.json();
                 console.log('Order placed successfully:', data);
                 toast.success('Order placed successfully');
+                sendNotification('Order', 'Your order has been placed successfully!');
 
                 // Calculate total amount
                 // const totalAmount = cartItems.reduce((total, item) => total + (item.quantity * item.Price), 0);
@@ -236,7 +182,7 @@ const Cart = () => {
                 },
                 quantity: item.quantity,
             }));
-    
+
             const response = await fetch(`${localhost}/api/payment-session`, {
                 method: 'POST',
                 headers: {
@@ -244,13 +190,13 @@ const Cart = () => {
                 },
                 body: JSON.stringify({ items: itemsToSend, totalAmount: totalAmount }),
             });
-    
+
             const { sessionId } = await response.json();
-    
+
             const { error } = await stripe.redirectToCheckout({
                 sessionId: sessionId,
             });
-    
+
             if (error) {
                 console.error(error);
                 toast.error('Failed to redirect to checkout. Please try again.');
@@ -267,9 +213,10 @@ const Cart = () => {
                         amount: totalAmount // Send total amount for both online and COD payments
                     }),
                 });
-    
+
                 const addPaymentData = await addPaymentResponse.json();
                 console.log('Payment added successfully:', addPaymentData);
+                sendNotification('Order', 'Made Successful Payment!');
                 clearCart();
                 setOpenDialog(false);
             }
@@ -278,7 +225,7 @@ const Cart = () => {
             toast.error('Payment error. Please try again.');
         }
     };
-    
+
 
 
     useEffect(() => {
@@ -448,7 +395,7 @@ const Cart = () => {
                     <div className="container">
                         <h2 className={`text-center mb-4  text-${isDarkMode ? 'light' : 'dark'}`}>Your <i className="fa-solid fa-cart-shopping text-success"></i> has <span className='text-warning' >{cartItems.length}</span> Items</h2>
                         {cartItems && cartItems.map((item, index) => (
-                            <div key={index} className="card mb-4" style={{ borderRadius: '15px' }}>
+                            <div key={index} className={`card mb-4  bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'} `} style={{ borderRadius: '15px' }}>
                                 <div className="card-body">
                                     <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
                                         <div>
@@ -484,7 +431,7 @@ const Cart = () => {
                             </div>
                         ))}
 
-                        <div className="mt-4">
+                        <div className={`mt-4  bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}>
                             {cartItems && cartItems.length > 0 && (
                                 <div>
                                     {cartItems.map((item, index) => (
@@ -493,7 +440,7 @@ const Cart = () => {
                                         </div>
                                     ))}
                                     <hr />
-                                    <div className="d-flex justify-content-between">
+                                    <div className={`d-flex justify-content-between `}>
                                         <span>Total Actual Price</span>
                                         <span>
                                             <small>${cartItems.reduce((total, item) => total + parseFloat(item.totalActualPrice || 0), 0)}</small>
@@ -619,17 +566,21 @@ const Cart = () => {
                                     </div>
                                 </div>
                             </div>
-                            <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
+                            <div className={`card mb-3 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}>
                                 <div className="card-body d-flex flex-column">
-                                    <label htmlFor="orderNote" className='card-title fw-bold '>Any Instructions</label>
-                                    <TextField type="text" className='input-group rounded-2 border-0 mt-2 '
+                                    <label htmlFor="orderNote" className="card-title fw-bold">Any Instructions</label>
+                                    <textarea
+                                        type="text"
+                                        className={`form-control mt-2 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}
                                         name="orderNote"
                                         id="orderNote"
+                                        rows={2}
                                         value={orderNote}
                                         onChange={(e) => setorderNote(e.target.value ? e.target.value : 'No Instruction')}
                                     />
                                 </div>
                             </div>
+
                         </div>
                         {cartItems.length > 0 && (
                             <div className="text-center mt-4">

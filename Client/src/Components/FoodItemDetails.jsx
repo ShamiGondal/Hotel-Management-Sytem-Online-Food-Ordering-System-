@@ -18,7 +18,8 @@ const FoodItemDetails = () => {
     const [mainImage, setMainImage] = useState(null);
     const [reviewText, setReviewText] = useState('');
     const [rating, setRating] = useState(0);
-    const { addToCart , addSingleItemToCart} = useCartContext();
+    const { addToCart, addSingleItemToCart, increaseQuantity,
+        decreaseQuantity, cartItems } = useCartContext();
     const [item, setItem] = useState(null);
     const [sizes, setsizes] = useState([])
     const [specialSelection, setspecialSelection] = useState([])
@@ -33,12 +34,7 @@ const FoodItemDetails = () => {
     const [selectedSize, setSelectedSize] = useState(null);
     const [selectedAdditions, setSelectedAdditions] = useState([]); // State for selected additions
     const [TotalPrice, setTotalPrice] = useState(0); // State for total price
-    // const [mainImage, setMainImage] = useState(null);
 
-    // const updateMainImage = (image) => {
-    //     setPreviousMainImage(mainImage); // Store the previous main image
-    //     setMainImage(image); // Set the clicked image as the main image
-    // };
 
 
     useEffect(() => {
@@ -193,11 +189,12 @@ const FoodItemDetails = () => {
     const scrollableContainerStyle = {
         maxHeight: '200px', // Adjust the height as needed
         overflowY: 'auto',
-        borderRadius: '10px', // Rounded scrollbar
+        borderRadius: '10px', // More rounded corners
         scrollbarWidth: 'thin', // Thin scrollbar
-        scrollbarColor: 'pink pink', // Pink scrollbar
-
+        scrollbarColor: 'red pink', // Pink scrollbar
+        scrollbarTrackColor: 'transparent', // Hide scrollbar track
     };
+
 
 
 
@@ -241,13 +238,17 @@ const FoodItemDetails = () => {
     };
 
 
+    const handleIncrease = (index) => {
+        increaseQuantity(cartItems[index].FoodItemID);
+    };
 
-    // Calculate total price based on selected sizes
-    // const totalPrice = selectedSize ? selectedSize.price : '';
+    const handleDecrease = (index) => {
+        decreaseQuantity(cartItems[index].FoodItemID);
+    };
 
 
     return (
-        <div className="d-flex align-items-center justify-content-center">
+        <div className="d-flex align-items-center justify-content-center    ">
             <div className={`container mt-5 pt-5 bg-${isDarkMode ? 'dark' : 'white'} text-${isDarkMode ? 'light' : 'dark'}`}>
                 <div className="row">
                     <div className="col-md-6">
@@ -320,7 +321,7 @@ const FoodItemDetails = () => {
                             </div>
                             {/* for addons  */}
                             <h6 className="mt-2 mb-2 ps-3">Addons</h6> {/* Top heading */}
-                            <div className="mt-3 mb-3" style={scrollableContainerStyle}>
+                            <div className="mt-3 mb-3 border-1 rounded-2 border-black" style={scrollableContainerStyle}>
                                 {addons.map((addon, index) => (
                                     <div key={index} className=" mb-3 p-3">
                                         <div className="row g-0">
@@ -344,8 +345,18 @@ const FoodItemDetails = () => {
                             </div>
 
 
-                            <div className="w-auto">
-                                <button className="btn btn-outline-success mt-2" onClick={() => { addToCart(item, selectedSize, selectedAdditions) }}>Add to Cart</button>
+                            <div className="w-auto d-flex justify-content-between mt-5 ">
+
+                                <button className="btn btn-outline-warning" onClick={() => { addToCart(item, selectedSize, selectedAdditions) }}>Add to Cart</button>
+                                <div className="d-flex align-items-center mb-2 ">
+                                    <button className="btn btn-outline-warning btn-sm me-2" onClick={handleDecrease}>
+                                        <i className="fa-solid fa-minus"></i>
+                                    </button>
+                                    <span className='text-danger'>{item.quantity}</span>
+                                    <button className="btn btn-outline-warning btn-sm ms-2" onClick={handleIncrease}>
+                                        <i className="fa-solid fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

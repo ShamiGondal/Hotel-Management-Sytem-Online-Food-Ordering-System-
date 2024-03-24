@@ -177,7 +177,7 @@
 /*code for home side bar*/
 
 .sidebar-open {
-  width: 250px;
+  width: 200px;
   transition: width 0.5s;
 }
 
@@ -204,10 +204,11 @@
   padding: 10px;
   transition: all 0.3s ease;
   overflow: hidden;
+  
 }
 
 .sidebar.closed {
-  width: 60px;
+  width: 80px;
 }
 
 .toggle-btn {
@@ -224,13 +225,13 @@
   background-color: #333 ;
   border: none;
   color: white;
-  margin-top: 5px;
+  margin-top: 20px;
   
 }
 
 .list-group-item:hover{
 
-  background-color: #414040;
+  background-color: #969494;
 }
 
 .content {
@@ -239,7 +240,7 @@
 
 .selected-item {
   background-color: #f0f0f0;
-  padding: 30px;
+  padding: 40px;
 }
 
 @media (min-width: 768px ) {
@@ -256,15 +257,17 @@
 @media (max-width: 840px) {
   .sidebar {
     height: auto;
-    background-color: rgb(255, 255, 255);
+    background-color: white;
     overflow: visible;
+    padding-bottom: 5px;
   }
 
   .toggle-btn {
     display: block;
-    margin: 20px auto; /* Center the button horizontally */
+    margin: 0 auto; /* Center the button horizontally */
     text-align: center;
     color: #fff;
+
   }
 
   .content {
@@ -272,7 +275,8 @@
   }
 
   .sidebar.closed {
-    height: 80px;
+    height: 100px;
+    margin-top: -10px;
     overflow: hidden;
   }
 }
@@ -384,3 +388,36 @@ body{
 
 
 /* custom drop dwon addons*/
+
+
+.notification-box::-webkit-scrollbar {
+  width: 5px; /* Set the width of the scrollbar */
+  height: 5px; /* Set the height of the scrollbar */
+}
+
+.notification-box::-webkit-scrollbar-thumb {
+  background-color: pink; /* Set the color of the thumb */
+  border-radius: 5px; /* Set the border radius to make it rounded */
+}
+
+.notification-box::-webkit-scrollbar-track {
+  background-color: pink; /* Set the color of the track */
+  border-radius: 5px; /* Set the border radius to make it rounded */
+}
+
+
+/* Styles for the website's scrollbar */
+body::-webkit-scrollbar {
+  width: 5px; /* Set the width of the scrollbar */
+  height: 5px; /* Set the height of the scrollbar */
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: pink; /* Set the color of the thumb */
+  border-radius: 5px; /* Set the border radius to make it rounded */
+}
+
+body::-webkit-scrollbar-track {
+  background-color: pink; /* Set the color of the track */
+  border-radius: 5px; /* Set the border radius to make it rounded */
+}

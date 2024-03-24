@@ -116,7 +116,7 @@ const Signup = () => {
                                             />
                                         </div>
 
-                                        <button type="submit" className="btn btn-success rounded-5 px-5 ">
+                                        <button type="submit" className={`btn btn-danger rounded-5 px-5 text-${isDarkMode ? "light" : "light"}`}>
                                             Signup <i className="bi bi-arrow-right"></i>
                                         </button>
                                         <div className="mt-3">

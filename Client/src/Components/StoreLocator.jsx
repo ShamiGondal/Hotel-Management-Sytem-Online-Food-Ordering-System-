@@ -8,7 +8,7 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 import EmailIcon from '@mui/icons-material/Email';
 import PublicIcon from '@mui/icons-material/Public';
 import { Button } from 'react-bootstrap';
-import RobotPng from '../assets/bannerimage.png'
+import RobotPng from '../assets/carsouleImge_1.png'
 import { useDarkMode } from './Hooks/DarkModeContext';
 
 const StoreLocator = () => {

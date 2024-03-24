@@ -24,18 +24,20 @@ function Home() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [imageSrc, setImageSrc] = useState('');
     const [image, setImage] = useState(null);
+    const [isLoggedIn, setisLoggedIn] = useState(Cookies.get('token'))
     const [filteredReservationss, setFilteredReservations] = useState(reservations);
 
     const [selectedItem, setSelectedItem] = useState('Profile');
 
     const [currentPage, setCurrentPage] = useState(1);
-    const ordersPerPage = 2;
+    const ordersPerPage = 10; // Change this to 10
     const [filteredOrders, setFilteredOrders] = useState([]);
 
     const filterOrders = (status) => {
         const filtered = orders.filter(order => order.Status === status);
         setFilteredOrders(filtered);
     };
+
     // Logic to get current orders based on pagination
     const indexOfLastOrder = currentPage * ordersPerPage;
     const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
@@ -43,6 +45,7 @@ function Home() {
 
     // Logic to change page
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
 
     const toggleSidebar = () => {
         setSidebarOpen(!sidebarOpen);
@@ -164,6 +167,12 @@ function Home() {
         fetchImage();
     }, []);
 
+    useEffect(() => {
+        filterOrders('Pending');
+        filteredReservations('Pending')
+    }, [isLoggedIn]); // Empty dependency array to run only once when the component mounts
+
+
     //FOR ADDRESS PAGINIATION IN ADDRESS PART
     const addressesPerPage = 3;
     const startIndex = (currentPage - 1) * addressesPerPage;
@@ -277,33 +286,33 @@ function Home() {
         <div>
             <div className="container-fluid ">
                 <div className="row CustomMarginTop"  >
-                    <div className={`col-md-3 sidebar ${sidebarOpen ? 'open' : 'closed'} bg-${isDarkMode ? "dark" : "light"}`}>
-                        <Button className="toggle-btn mt-5 " onClick={toggleSidebar}>
-                            {sidebarOpen ? <i className="fa-solid fa-xmark"></i> : <i className="fa-solid fa-arrow-right-from-bracket"></i>}
-
+                    <div
+                        className={`col-md-3 mt-md-4 sidebar ${sidebarOpen ? 'open' : 'closed'} bg-${isDarkMode ? 'dark' : 'light'}`}
+                        onMouseEnter={() => setSidebarOpen(true)} // Open sidebar on mouse enter
+                        onMouseLeave={() => setSidebarOpen(false)} // Close sidebar on mouse leave
+                    >
+                        <Button className="toggle-btn mt-5" onClick={toggleSidebar}>
+                            <i className={`fa-solid ${sidebarOpen ? 'fa-xmark' : 'fa-arrow-right-from-bracket'}`}></i>
                         </Button>
                         <ul className="list-group">
                             <li className="list-group-item" onClick={() => handleItemClick('Profile')}>
-                                <i className="fa-solid fa-user"></i> Profile
+                                <i className="fa-solid fa-user"></i> {sidebarOpen && 'Profile'}
                             </li>
                             <li className="list-group-item" onClick={() => handleItemClick('Orders')}>
-                                <script src="https://cdn.lordicon.com/lordicon.js"></script>
-                                <i className="fa-brands fa-first-order"></i> Orders
+                                <i className="fa-brands fa-first-order"></i> {sidebarOpen && 'Orders'}
                             </li>
                             <li className="list-group-item" onClick={() => handleItemClick('Reservations')}>
-                                <script src="https://cdn.lordicon.com/lordicon.js"></script>
-                                <i className="fa-solid fa-book"></i> Reservations
+                                <i className="fa-solid fa-book"></i> {sidebarOpen && 'Reservations'}
                             </li>
                             <li className="list-group-item" onClick={() => handleItemClick('FeedBacks')}>
-                                <i className="fa-regular fa-comment"></i> FeedBacks
+                                <i className="fa-regular fa-comment"></i> {sidebarOpen && 'FeedBacks'}
                             </li>
                             <li className="list-group-item" onClick={() => handleItemClick('Complaints')}>
-                                <i className="fa-brands fa-cuttlefish"></i>  Complaints
+                                <i className="fa-brands fa-cuttlefish"></i> {sidebarOpen && 'Complaints'}
                             </li>
                             <li className="list-group-item" onClick={() => handleItemClick('Payment-History')}>
-                                <i className="fa-brands fa-paypal"></i>  Payments
+                                <i className="fa-brands fa-paypal"></i> {sidebarOpen && 'Payments'}
                             </li>
-
                         </ul>
                     </div>
                     <div className={`${sidebarOpen ? 'col-md-8' : 'col-md-10'} col-10 mt-5`}>
@@ -482,32 +491,37 @@ function Home() {
                             )}
                             {selectedItem === 'Payment-History' && (
                                 <div className="container mt-5">
-                                    <div className="main-body">
-                                        <div className="row row-cols-1 row-cols-md-2 g-4">
-                                            {payments.slice((currentPage - 1) * 6, currentPage * 6).map((payment) => (
-                                                <div className="col mb-4" key={payment.PaymentID}>
-                                                    <div className={`card  bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}  `}>
-                                                        <div className="card-body">
-                                                            <h5 className="card-title">Order ID: {payment.OrderID}</h5>
-                                                            <h6 className={`card-subtitle mb-2   `}>Date: {new Date(payment.PaymentDate).toLocaleString()}</h6>
-                                                            <p className="card-text">Amount: ${payment.Amount}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
+                                    <h2 className={`text-${isDarkMode ? 'light' : 'dark'}`}>{selectedItem}</h2>
+                                    <div className="table-responsive">
+                                        <table className={`table table-striped table-bordered table-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'} mt-4`}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Order ID</th>
+                                                    <th>Date</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody  >
+                                                {payments.slice((currentPage - 1) * 6, currentPage * 6).map(payment => (
+                                                    <tr key={payment.PaymentID}>
+                                                        <td>{payment.OrderID}</td>
+                                                        <td>{new Date(payment.PaymentDate).toLocaleString()}</td>
+                                                        <td>${payment.Amount}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                    <PaginationComponent
-                                        currentPage={currentPage}
-                                        totalPages={Math.ceil(payments.length / 6)}
-                                        onPageChange={paginate}
-                                    />
+                                    {/* Pagination */}
+                                    <div className="d-flex justify-content-center">
+                                        <PaginationComponent
+                                            currentPage={currentPage}
+                                            totalPages={Math.ceil(payments.length / 6)}
+                                            onPageChange={paginate}
+                                        />
+                                    </div>
                                 </div>
                             )}
-
-
-
-
 
                             {selectedItem === 'Orders' && (
                                 <div className="mt-5">
@@ -531,37 +545,46 @@ function Home() {
                                     </div>
 
                                     <div className="row mt-3">
-                                        {currentOrders.map(order => (
-                                            <div key={order.id} className={`card ms-3 border-0 rounded-2 shadow-sm mb-4 bg-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'} `} style={{ borderRadius: '15px' }}>
-                                                <div className={`card-body  `}>
-                                                    <div className="d-flex justify-content-between align-items-center">
-                                                        <h3>{`Order ID: ${order.OrderID}`}</h3>
-                                                        <span className={`badge p-2 bg-${order.Status === 'Pending' ? 'primary' : order.Status === 'Confirmed' ? 'success' : 'danger'}`}>
-                                                            {order.Status}
-                                                        </span>
-                                                    </div>
-                                                    <div className="mt-2">
-                                                        <p>{`Order Date: ${order.OrderDate}`}</p>
-                                                        <p>{`Payment Status: ${order.PaymentStatus}`}</p>
-                                                        <p>{`Total Amount: ${order.TotalAmount}`}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        <div className="table-responsive" style={{ maxHeight: '600px', overflowY: 'scroll', scrollbarWidth: 'thin', scrollbarColor: 'pink' }}>
+                                            <table className={`table table-striped  table-bordered table-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`} style={{ borderRadius: '15px' }}>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Order ID</th>
+                                                        <th>Status</th>
+                                                        <th>Order Date</th>
+                                                        <th>Payment Status</th>
+                                                        <th>Total Amount</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {currentOrders.map(order => (
+                                                        <tr key={order.id}>
+                                                            <td>{order.OrderID}</td>
+                                                            <td>
+                                                                <span className={`badge p-2 bg-${order.Status === 'Pending' ? 'primary' : order.Status === 'Confirmed' ? 'success' : 'danger'}`}>
+                                                                    {order.Status}
+                                                                </span>
+                                                            </td>
+                                                            <td>{new Date(order.OrderDate).toLocaleString()}</td>
+                                                            <td>{order.PaymentStatus}</td>
+                                                            <td>{order.TotalAmount}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
 
                                     {/* Pagination */}
                                     <div className="d-flex justify-content-center">
                                         <PaginationComponent
                                             currentPage={currentPage}
-                                            totalPages={Math.ceil(filteredOrders.length / ordersPerPage)}
+                                            totalPages={Math.ceil(filteredOrders.length / 10)} // Use filteredOrders length here
                                             onPageChange={paginate}
                                         />
-
                                     </div>
                                 </div>
                             )}
-
                             {selectedItem === 'Reservations' && (
                                 <div className="mt-5">
                                     <h2 className={`text-${isDarkMode ? 'light' : 'dark'}`}>{selectedItem}</h2>
@@ -582,28 +605,32 @@ function Home() {
                                             </div>
                                         </div>
                                     </div>
-                                    {filteredReservationss.slice((currentPage - 1) * 3, currentPage * 3).map(reservation => {
-                                        const reservationDate = new Date(reservation.ReservationDate);
-                                        const date = reservationDate.toLocaleDateString(); // Format date
-                                        const time = reservationDate.toLocaleTimeString(); // Format time
-                                        return (
-                                            <Card className={`mb-4 p-5 position-relative rounded-2 shadow bg-${isDarkMode ? 'dark' : 'light'} reservation-container text-${isDarkMode ? 'light' : 'dark'}`} key={reservation.id}>
-                                                <CardContent>
-                                                    <Typography variant='h5' component='div'>Reservation Details</Typography>
-                                                    <div className="mt-3">
-                                                        <strong className=''>Reservation Date:</strong> {date}<br />
-                                                        <strong>Reservation Time:</strong> {time}<br />
-                                                        <strong>No of Tables:</strong> {reservation.NoOfTables}<br />
-                                                        <div className="status-badge position-absolute top-0 end-0 mt-2 me-2">
+                                    <div className="table-responsive">
+                                        <table className={`table table-striped table-bordered table-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Reservation Date</th>
+                                                    <th>Reservation Time</th>
+                                                    <th>No of Tables</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredReservationss.slice((currentPage - 1) * 3, currentPage * 3).map(reservation => (
+                                                    <tr key={reservation.id}>
+                                                        <td>{new Date(reservation.ReservationDate).toLocaleDateString()}</td>
+                                                        <td>{new Date(reservation.ReservationDate).toLocaleTimeString()}</td>
+                                                        <td>{reservation.NoOfTables}</td>
+                                                        <td>
                                                             <span className={`badge bg-${reservation.Status === 'Pending' ? 'primary' : reservation.Status === 'Confirmed' ? 'success' : 'danger'} text-light fw-bold`}>
                                                                 {reservation.Status}
                                                             </span>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        );
-                                    })}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                     <div className="d-flex justify-content-center mt-4">
                                         <PaginationComponent
                                             currentPage={currentPage}
@@ -614,27 +641,37 @@ function Home() {
                                 </div>
                             )}
 
+
                             {selectedItem === 'Complaints' && (
                                 <div className="container mt-5">
                                     <h2 className={`text-${isDarkMode ? 'light' : 'dark'}`}>{selectedItem}</h2>
-                                    <div className="row row-cols-1 row-cols-md-2 g-4">
-                                        {complaints.slice((currentPage - 1) * 3, currentPage * 3).map(complaint => (
-                                            <div className="col mb-4" key={complaint.ComplaintID}>
-                                                <div className={`card border-${isDarkMode ? 'light' : 'dark'} text-${isDarkMode ? 'light' : 'dark'} bg-${isDarkMode ? 'dark' : 'light'}`}>
-                                                    <div className="card-body d-flex flex-column">
-                                                        <div>
-                                                            <h5 className="card-title">Complaint ID: {complaint.ComplaintID}</h5>
-                                                            <p className="card-text">Complaint Text: {complaint.ComplaintText}</p>
-                                                            <p className="card-text">Complaint Date: {new Date(complaint.ComplaintDate).toLocaleString()}</p>
-                                                        </div>
-                                                        <div className="d-flex justify-content-between mt-auto">
-                                                            <p className="card-text">Complaint Type: {complaint.ComplaintType}</p>
-                                                            <p className={`card-text text-${complaint.IsResolved ? 'success' : 'danger'}`}>Resolved: {complaint.IsResolved ? 'Yes' : 'No'}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                    <div className="table-responsive">
+                                        <table className={`table table-striped table-bordered table-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Complaint ID</th>
+                                                    <th>Complaint Text</th>
+                                                    <th>Complaint Date</th>
+                                                    <th>Complaint Type</th>
+                                                    <th>Resolved</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {complaints.slice((currentPage - 1) * 3, currentPage * 3).map(complaint => (
+                                                    <tr key={complaint.ComplaintID}>
+                                                        <td>{complaint.ComplaintID}</td>
+                                                        <td>{complaint.ComplaintText}</td>
+                                                        <td>{new Date(complaint.ComplaintDate).toLocaleString()}</td>
+                                                        <td>{complaint.ComplaintType}</td>
+                                                        <td>
+                                                            <span className={`badge bg-${complaint.IsResolved ? 'success' : 'danger'} text-light fw-bold`}>
+                                                                {complaint.IsResolved ? 'Yes' : 'No'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div className="d-flex justify-content-center mt-4">
                                         <PaginationComponent
@@ -646,16 +683,24 @@ function Home() {
                                 </div>
                             )}
 
+
                             {selectedItem === 'FeedBacks' && (
                                 <div className="container mt-5">
                                     <h2 className={`text-${isDarkMode ? 'light' : 'dark'}`}>{selectedItem}</h2>
-                                    <div className="row row-cols-1 row-cols-md-2  g-4">
-                                        {feedback.slice((currentPage - 1) * 3, currentPage * 3).map(feedbackItem => (
-                                            <div className="mb-4" key={feedbackItem.id}>
-                                                <div className={`card  border-${isDarkMode ? 'light' : 'dark'} text-${isDarkMode ? 'light' : 'dark'}  bg-${isDarkMode ? 'dark' : 'light'}`}>
-                                                    <div className="card-body ">
-                                                        <h6 className="card-title">Comment: {feedbackItem.Comment}</h6>
-                                                        <p className="card-text ">Food Rating:
+                                    <div className="table-responsive">
+                                        <table className={`table table-striped table-bordered table-${isDarkMode ? 'dark' : 'light'} text-${isDarkMode ? 'light' : 'dark'}`}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Comment</th>
+                                                    <th>Food Rating</th>
+                                                    <th>Service Rating</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {feedback.slice((currentPage - 1) * 3, currentPage * 3).map(feedbackItem => (
+                                                    <tr key={feedbackItem.id}>
+                                                        <td>{feedbackItem.Comment}</td>
+                                                        <td>
                                                             <StarRatings
                                                                 rating={feedbackItem.FoodRating}
                                                                 starRatedColor="#f7d70e"
@@ -663,8 +708,8 @@ function Home() {
                                                                 starDimension="20px"
                                                                 starSpacing="2px"
                                                             />
-                                                        </p>
-                                                        <p className="card-text">Service Rating:
+                                                        </td>
+                                                        <td>
                                                             <StarRatings
                                                                 rating={feedbackItem.ServiceRating}
                                                                 starRatedColor="#f7d70e"
@@ -672,11 +717,11 @@ function Home() {
                                                                 starDimension="20px"
                                                                 starSpacing="2px"
                                                             />
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
                                     <div className="d-flex justify-content-center mt-4">
                                         <PaginationComponent
@@ -687,6 +732,7 @@ function Home() {
                                     </div>
                                 </div>
                             )}
+
 
 
 
