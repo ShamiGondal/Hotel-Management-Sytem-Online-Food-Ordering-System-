@@ -18,14 +18,12 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 
-//inserting foodItems
-
-
 cloudinary.config({
-    cloud_name: 'applyace-storage',
-    api_key: '357132674117494',
-    api_secret: 'D4AZuelvk2GvDpgJ_U6bKkAbhl4'
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
+
 
 
 Router.post('/addFoodItems', upload.array('images'), async (req, res) => {

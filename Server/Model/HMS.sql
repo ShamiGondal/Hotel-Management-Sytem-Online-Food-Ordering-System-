@@ -52,6 +52,7 @@ CREATE TABLE Orders (
     OrderNote VARCHAR(100) DEFAULT NULL,
     PaymentStatus VARCHAR(50) CHECK (PaymentStatus IN ('Pending', 'Confirmed', 'Rejected')),
     TotalAmount DECIMAL(10, 2),
+    DeliveryAddress VARCHAR(255),
     Status VARCHAR(50) CHECK (Status IN ('Pending', 'Confirmed', 'Rejected')),
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );

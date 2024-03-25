@@ -4,20 +4,12 @@ import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
-import robotPng from "../assets/robot.png"
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import CustomerLogin from "./CustomerLogin";
-import Reservations from '../Components/Reservations';
-import Complaints from '../Components/Complaints';
-import Feedbacks from '../Components/Feedback';
 import { Button } from "@mui/material";
 import { useDarkMode } from "./Hooks/DarkModeContext";
 import Cookies from "js-cookie";
-import PrivacyPolicy from "./PrivacyPolicy";
 import { useCartContext } from "./Hooks/useCart";
-import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { toast } from 'react-toastify';
 import { ToastContainer } from 'react-toastify';
@@ -35,7 +27,7 @@ const Navbar = () => {
     const [isChecked, setIsChecked] = useState(false);
     const navigate = useNavigate();
     const [userDetails, setUserDetails] = useState({});
-    const localhost = `http://localhost:4000`
+    const apiUri = import.meta.env.VITE_REACT_APP_API_URL;
     const { cartItems } = useCartContext();
     const [imageSrc, setImageSrc] = useState('');
     const { isDarkMode, toggleDarkMode, isDrawerDarkMode, setIsDrawerDarkMode } = useDarkMode();
@@ -46,6 +38,14 @@ const Navbar = () => {
     const [postalCode, setPostalCode] = useState('');
     const [country, setCountry] = useState('');
     const [imageUpdated, setImageUpdated] = useState(false);
+    const [UniqueCategories, setUniqueCategories] = useState([]);
+    const [foodItems, setFoodItems] = useState([]);
+    const [showNotification, setShowNotification] = useState(false);
+    const notificationRef = useRef(null);
+    const [notifications, setNotifications] = useState([]); // State to hold notifications
+    const [unreadNotifications, setUnreadNotifications] = useState([]);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [addresses, setAddresses] = useState([]);
 
     useEffect(() => {
         setIsDrawerDarkMode(isDarkMode);
@@ -122,7 +122,7 @@ const Navbar = () => {
                         return;
                     }
 
-                    const response = await fetch('http://localhost:4000/api/my-Image', {
+                    const response = await fetch(`${apiUri}api/my-Image`, {
                         method: 'GET',
                         headers: {
                             'Authorization': token
@@ -163,7 +163,7 @@ const Navbar = () => {
                 'Authorization': `${token}`
             };
 
-            fetch(`${localhost}/api/getCustomer`, { headers })
+            fetch(`${apiUri}api/getCustomer`, { headers })
                 .then(response => response.json())
                 .then(data => setUserDetails(data))
                 .catch(error => console.error('Error fetching Customer:', error));
@@ -182,7 +182,7 @@ const Navbar = () => {
         };
 
         try {
-            const response = await fetch('http://localhost:4000/api/addAddress', {
+            const response = await fetch(`${apiUri}api/addAddress`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -210,36 +210,7 @@ const Navbar = () => {
         }
     };
 
-    const [addresses, setAddresses] = useState([]);
 
-    // useEffect(() => {
-    //     const fetchAddresses = async () => {
-    //         try {
-    //             const token = Cookies.get('token');
-    //             const headers = {
-    //                 'Content-Type': 'application/json',
-    //                 'Authorization': `${token}`
-    //             };
-    //             const response = await fetch(`${localhost}/api/my-addresses`, { headers });
-    //             if (!response.ok) {
-    //                 throw new Error('Failed to fetch addresses');
-    //             }
-    //             const data = await response.json();
-    //             // Sort addresses by date in descending order and select the first address
-    //             const sortedAddresses = data.sort((a, b) => new Date(b.date) - new Date(a.date));
-    //             const mostRecentAddress = sortedAddresses[0];
-    //             setAddresses([mostRecentAddress]); // Set the most recent address
-    //             console.log(addresses)
-    //         } catch (error) {
-    //             console.error('Error fetching addresses:', error);
-    //         }
-    //     };
-
-    //     // Fetch addresses initially when user is logged in
-    //     if (isLoggedIn) {
-    //         fetchAddresses();
-    //     }
-    // }, [isLoggedIn]);
 
     useEffect(() => {
         const fetchAddresses = async () => {
@@ -250,7 +221,7 @@ const Navbar = () => {
                     return;
                 }
 
-                const response = await fetch(`http://localhost:4000/api/my-addresses`, {
+                const response = await fetch(`${apiUri}api/my-addresses`, {
                     headers: {
                         'Authorization': token
                     }
@@ -275,10 +246,7 @@ const Navbar = () => {
         fetchAddresses();
     }, [isLoggedIn]);
 
-    const [showNotification, setShowNotification] = useState(false);
-    const notificationRef = useRef(null);
-    const [notifications, setNotifications] = useState([]); // State to hold notifications
-    const [unreadNotifications, setUnreadNotifications] = useState([]);
+
 
     // Function to toggle notification box visibility
     const toggleNotification = () => {
@@ -300,7 +268,7 @@ const Navbar = () => {
         const fetchCustomerNotifications = async () => {
             try {
                 const token = Cookies.get('token')
-                const response = await fetch(`${localhost}/api/notifications/customer`, {
+                const response = await fetch(`${apiUri}api/notifications/customer`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `${token}`
@@ -331,7 +299,7 @@ const Navbar = () => {
         // Poll for new notifications every 30 seconds
         const notificationPollingInterval = setInterval(fetchCustomerNotifications, 30000);
 
-        return () => clearInterval(notificationPollingInterval); 
+        return () => clearInterval(notificationPollingInterval);
 
     }, [isLoggedIn]);
 
@@ -349,6 +317,40 @@ const Navbar = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+
+    // Function to toggle the menu dropdown
+    const toggleMenu = () => {
+        setMenuOpen(!menuOpen);
+    };
+
+    //getting menu for drawer
+    useEffect(() => {
+        // Fetch food items from the endpoint
+        fetch(`${apiUri}api/getFoodItems`)
+            .then(response => response.json())
+            .then(data => {
+                // Filter out unique categories from the fetched data
+                const uniqueCategories = data.reduce((categories, item) => {
+                    if (!categories.includes(item.Category)) {
+                        categories.push(item.Category);
+                    }
+                    return categories;
+                }, []);
+
+                // Update the component state with the fetched food items and unique categories
+                setFoodItems(data);
+                setUniqueCategories(uniqueCategories);
+                console.log(uniqueCategories)
+                console.log(data)
+            })
+            .catch(error => {
+                // Handle errors
+                console.error('Error fetching food items:', error);
+                // You can set an error state or display an error message here if needed
+            });
+    }, []);
+
 
     return (
         <>
@@ -375,7 +377,7 @@ const Navbar = () => {
                                 </Link>
                             ))
                         ) : (
-                            <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger  d-none d-md-block btn-sm rounded-2 bg-transparent  border-0" >
+                            <Link to={isLoggedIn ? "#" : "/Login"} className={`btn btn-danger text-${isDarkMode ? "light" : "danger"}  d-none d-md-block btn-sm rounded-2 bg-transparent  border-0`} >
                                 <i className={`fa-solid fa-plus text-danger me-2"`}></i>{" Add Address"}
                             </Link>
                         )}
@@ -461,7 +463,7 @@ const Navbar = () => {
                             )}
                             {showNotification && ( // Render the notification box when showNotification is true
                                 <div ref={notificationRef} className={`notification-box rounded-2 border-warning shadow-lg bg-${isDarkMode ? "dark" : "light"}`} style={{
-                                    position: 'absolute', top: '100%', right: 0, width: '300px', maxHeight: '300px', overflowY: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 999,
+                                    position: 'absolute', top: '100%', right: 0, width: '300px', maxHeight: '400px', overflowY: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 999,
                                 }}>
                                     {/* Notification content */}
                                     {notifications.map((notification, index) => (
@@ -514,12 +516,12 @@ const Navbar = () => {
                     </div>
                 </div>
             </div>
-
+            {/* address taking */}
             <ul className={`nav justify-content-center d-md-none mt-5 bg-${isDarkMode ? 'dark' : 'light'}  food-items-container ${isDarkMode ? 'dark-mode' : ''} `}>
                 <li className="nav-item mt-3 mb-2 ">
                     {isLoggedIn && addresses.length > 0 ? (
                         addresses.map((address, index) => (
-                            <Link key={index} to="#" className={`btn btn-danger btn-sm rounded-2  bg-transparent text-${isDarkMode ? "light": "danger"} border-0 z-3 `} type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
+                            <Link key={index} to="#" className={`btn btn-danger btn-sm rounded-2  bg-transparent text-${isDarkMode ? "light" : "danger"} border-0 z-3 `} type="button" data-bs-toggle="modal" data-bs-target="#exampleModal" aria-current="page">
                                 <div>
                                     <i className="fa-solid fa-location-dot text-danger me-2"></i>
                                     {address && address.City && address.State && address.PostalCode && address.Country ? (
@@ -532,7 +534,7 @@ const Navbar = () => {
                             </Link>
                         ))
                     ) : (
-                        <Link to={isLoggedIn ? "#" : "/Login"} className="btn btn-danger btn-sm rounded-2 bg-transparent text-dark border-0" >
+                        <Link to={isLoggedIn ? "#" : "/Login"} className={`btn btn-danger btn-sm rounded-2 bg-transparent  border-0 text-${isDarkMode ? "light" : "danger"} `} >
                             <i className="fa-solid fa-plus text-danger me-2"></i>{"Add Address"}
                         </Link>
                     )}
@@ -540,9 +542,7 @@ const Navbar = () => {
 
 
             </ul>
-
-
-
+            {/* drawer  */}
             <div className='container-fluid'>
                 <Drawer
                     open={drawerOpen}
@@ -551,34 +551,35 @@ const Navbar = () => {
                     sx={{
                         '& .MuiDrawer-paper': {
                             overflowX: 'hidden',
-                            overflowY: 'hidden',
                             backgroundColor: isDrawerDarkMode ? '#181b1e' : 'white',
                             color: isDrawerDarkMode ? 'white' : 'black',
                             boxShadow: '5px 5px 15px rgba(0,0,0,.4)',
+                            overflowY: 'auto', // Enable vertical scrolling
+                            maxHeight: '100vh', // Set maximum height to viewport height
+                            scrollbarWidth: 'thin', // Thin scrollbar
+                            scrollbarColor: 'red pink', // Pink scrollbar
+                            scrollbarTrackColor: 'transparent', // Hide scrollbar track
                         },
                     }}
                 >
                     <div style={{ width: 250, marginTop: 40 }}>
                         <div className={`d-flex mt-3 text-${isDarkMode ? 'light' : 'black'} `}>
                             <IconButton
-                                className="mt-2"
+                                className={`mt-2 text-${isDarkMode ? 'light' : 'black'}`}
                                 edge="end"
                                 onClick={toggleDrawer}
-                                sx={{ position: 'absolute', top: 0, right: 12, color: isDarkMode ? 'light' : 'black' }}
+                                sx={{ position: 'absolute', top: 0, right: 12 }}
                             >
                                 <CloseIcon />
                             </IconButton>
                             {/* {This is for small devices} */}
                             {Cookies.get('token') ?
                                 (
-                                    <div className=" d-md-none " style={{ position: 'absolute', bottom: 55, right: 160, width: '100%', }}>
+                                    <div className=" d-md-none " style={{ position: 'absolute', top: 70, right: 220, width: '100%', }}>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 16px' }}>
                                             <button
-                                                onMouseEnter={handleMenuOpens}
-                                                onMouseLeave={handleMenuCloses}
-                                                className="border-0 bg-transparent"
+                                                className="border-0 bg-transparent d-flex flex-column"
                                                 style={{
-                                                    cursor: 'pointer',
                                                     marginRight: '-43px',
                                                     marginBottom: 40,
                                                     position: 'absolute',
@@ -593,36 +594,10 @@ const Navbar = () => {
                                                 }}
                                             >
                                                 <img src={imageSrc} alt="Footer Logo" style={{ height: '60px', width: '60px', marginRight: '20px', borderRadius: '50%' }} />
-                                                <div className={`d-flex  fw-medium text-${isDarkMode ? 'light' : 'dark'} `} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
+                                                <div className={`d-flex mt-2 ms-5  fw-medium text-${isDarkMode ? 'light' : 'dark'} `} style={{ fontSize: '13px', display: 'flex', whiteSpace: 'nowrap' }}>
                                                     Hi! {Object.keys(userDetails).length > 0 && `${userDetails.FirstName}  `}
-                                                    <i className="fa-solid fa-caret-up text-danger ms-2 fs-6 "></i>
                                                 </div>
                                             </button>
-
-                                            <ul
-                                               className={`bg-${isDarkMode ? "dark": "light"} custom-menu`}
-                                                style={{
-                                                    position: 'absolute',
-                                                    top: 'calc(50% - 200px)', // Adjust the calculation based on the desired distance from the top
-                                                    right: 'calc(50% - 400px)',
-                                                    zIndex: 999,
-                                                    width: '250px', // Set the width to your desired value
-                                                    display: isMenuOpen ? 'block' : 'none',
-                                                    flexDirection: 'column',
-                                                    padding: '0',
-                                                    margin: '0',
-                                                    listStyleType: 'none',
-                                                    backgroundColor: '#fff',
-                                                    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.1)',
-                                                    transition: 'all 0.3s ease-in-out',
-                                                }}
-                                            >
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer' }} className={`text-${isDarkMode ? "light": "black"}`} onClick={() => handleMenuItemClick('My-Home')}><i className="fa-solid fa-gauge text-danger fs-5"></i> Dashboard</li>
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} className={`text-${isDarkMode ? "light": "dark"}`} onClick={handleSignOut}><i className="fa fa-sign-out text-danger" aria-hidden="true"></i> Sign Out</li>
-                                                <li style={{ padding: '8px 16px', cursor: 'pointer', borderTop: '1px solid #ccc' }} className={`text-${isDarkMode ? "light": "dark"}`}><i className="fa-solid fa-circle-info text-danger"></i> Help Center</li>
-                                            </ul>
-
-
                                         </div>
                                     </div>
 
@@ -639,7 +614,7 @@ const Navbar = () => {
 
 
                             <IconButton
-                                className="border-0 mt-3 rounded-0 d-flex justify-content-center align-content-center"
+                                className="border-0 mt-5 mt-md-2 rounded-0 d-flex justify-content-center align-content-center"
                                 edge="end"
                                 sx={{ position: 'relative', left: 14 }}
                             >
@@ -652,13 +627,32 @@ const Navbar = () => {
                         </div>
                         {/* Render menu items */}
                         <hr className="bg-dark" />
-                        <MenuItem onClick={() => handleMenuItemClick('Store-Locator')}>Store Locator</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick('Track-Order')}>Track Order</MenuItem>
-                        <hr className="bg-dark" />
-                        <MenuItem onClick={() => handleMenuItemClick('Feedbacks')}>Feedbacks</MenuItem>
-                        <MenuItem onClick={() => handleMenuItemClick('Complaints')}>Complaints</MenuItem>
+                        <MenuItem onClick={toggleMenu} className="d-flex justify-content-between " >Our Menu
+                            {menuOpen ? <i className="fa-solid fa-minus"></i> : <i className="fa-solid fa-plus"></i>}
+                        </MenuItem>
+                        {menuOpen && (
+                            <div>
+                                {
+                                    UniqueCategories && UniqueCategories.filter(category => category !== null).map((category, index) => (
+                                        <div key={index} className="mx-2">
+                                            <MenuItem className={`text-${isDarkMode ? 'light' : 'dark'}`} onClick={() => handleMenuItemClick('FoodMenu')}>
+                                                {category}
+                                            </MenuItem>
+                                        </div>
+                                    ))
+                                }
+                            </div>
+                        )}
+                        <MenuItem className="d-flex justify-content-between d-md-none " onClick={() => handleMenuItemClick('My-Home')}>DashBoard <i className="fa-solid fa-gauge text-danger fs-5"></i></MenuItem>
                         <MenuItem onClick={() => handleMenuItemClick('Reservations')}>Reservations</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('Complaints')}>Complaints</MenuItem>
+                        <hr className="bg-dark" />
+                        <MenuItem onClick={() => handleMenuItemClick('Track-Order')}>Track Order</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('Store-Locator')}>Store Locator</MenuItem>
+                        <MenuItem onClick={() => handleMenuItemClick('Feedbacks')}>Feedbacks</MenuItem>
                         <MenuItem onClick={() => handleMenuItemClick('PrivacyPolicy')}>Privacy Policy</MenuItem>
+                        <MenuItem className="d-flex justify-content-between d-md-none">Help Center <i className="fa-solid fa-circle-info text-danger"></i></MenuItem>
+                        <MenuItem className="d-flex justify-content-between d-md-none" onClick={() => handleSignOut()}>SignOut <i className="fa fa-sign-out text-danger" aria-hidden="true"></i></MenuItem>
                     </div>
 
 

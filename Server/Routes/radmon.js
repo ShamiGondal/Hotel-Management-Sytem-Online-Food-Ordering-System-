@@ -10,47 +10,6 @@ const Router = express.Router();
 
 //admin can only add the foodItems
 
-//inserting foodItems
-Router.post('/addFoodItems', (req, res) => {
-    const { name, price, category, availableQuantity, foodItemDiscount } = req.body;
-
-    // Check for missing fields
-    if (!name || !price || !category || !availableQuantity || !foodItemDiscount) {
-        return res.status(400).json({ error: "All fields are required." });
-    }
-
-    // Validate price and available quantity
-    if (isNaN(price) || isNaN(availableQuantity) || price <= 0 || availableQuantity <= 0) {
-        return res.status(400).json({ error: "Price and available quantity must be valid numbers greater than zero." });
-    }
-
-
-    const result = pool.request()
-        .input('Name', mssql.VarChar, name)
-        .input('Price', mssql.Decimal(10, 2), price)
-        .input('Category', mssql.VarChar, category)
-        .input('AvailableQuantity', mssql.Int, availableQuantity)
-        .input('FoodItemDiscount', mssql.Decimal(5, 2), foodItemDiscount)
-        .execute('InsertFoodItem', (err, recordset) => {
-            if (err) {
-                console.error("Error inserting food item:", err);
-                return res.status(500).json({ error: "An error occurred while inserting the food item." });
-            } else {
-                res.status(200).json({
-                    message: "Successfully Inserted the FoodItem",
-                    FoodItem: {
-                        Name: name,
-                        Price: price,
-                        Category: category,
-                        AvailableQuantity: availableQuantity,
-                        FoodItemDiscount: foodItemDiscount
-                    }
-                });
-            }
-        });
-});
-
-
 // Endpoint to fetch all customers
 Router.get('/getCustomers', async (req, res) => {
     try {

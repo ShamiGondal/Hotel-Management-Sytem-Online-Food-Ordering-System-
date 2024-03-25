@@ -10,8 +10,9 @@ const Router = express.Router();
 const saltRounds = 10; // Number of salt rounds for bcrypt
 
 // Function to generate JWT token
+
 const generateToken = (userID) => {
-  const secretKey = 'yourSecretKey'; // Replace with a strong secret key
+  const secretKey = process.env.SECRET_KEY;
   const expiresIn = '1h'; // Token expiration time
 
   return jwt.sign({ userID }, secretKey, { expiresIn });

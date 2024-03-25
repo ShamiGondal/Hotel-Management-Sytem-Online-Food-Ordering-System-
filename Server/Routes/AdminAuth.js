@@ -9,7 +9,7 @@ const Router = express.Router();
 
 const saltRounds = 10;
 const generateToken = (AdminID) => {
-    const secretKey = 'yourSecretKey'; // Replace with a strong secret key
+    const secretKey = process.env.SECRET_KEY;
     const expiresIn = '1h'; // Token expiration time
     return jwt.sign({ AdminID, }, secretKey, { expiresIn })
 }
