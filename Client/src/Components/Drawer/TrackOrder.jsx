@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDarkMode } from '../Hooks/DarkModeContext';
 import Cookies from 'js-cookie';
 
@@ -7,9 +7,20 @@ const TrackOrder = () => {
     const [error, setError] = useState(null);
     const { isDarkMode } = useDarkMode();
     const [orders, setOrders] = useState([]);
-
+    const [loggedIn, setLoggedIn] = useState(false);
     const token = Cookies.get('token')
     const apiUri = import.meta.env.VITE_REACT_APP_API_URL;
+
+    useEffect(() => {
+        // Check if user is logged in
+        const token = Cookies.get('token');
+        if (token) {
+            setLoggedIn(true);
+        } else {
+            // Redirect to login page if token is not present
+            window.location.href = '/login';
+        }
+    }, []);
 
     const handleTrackOrder = async () => {
         try {

@@ -183,12 +183,12 @@ Router.post('/Login', [
       // Generate JWT token
       const token = generateToken(user.CustomerID);
 
-      // Set the token in cookies
+      // Set the token in cookies without maxAge
       res.cookie('token', token, {
         httpOnly: true,
-        maxAge: 3600000,
         sameSite: 'strict',
       });
+
 
       res.status(200).json({
         message: 'Login successful',

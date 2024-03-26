@@ -12,6 +12,7 @@ import sendNotification from '../helper/NotificationSender'; // Correct import p
 import { ToastContainer, toast } from 'react-toastify';
 
 
+
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 console.log(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
 
@@ -129,10 +130,8 @@ const Cart = () => {
 
                 const data = await response.json();
                 console.log('Order placed successfully:', data);
+                toast("Order Placed Successfully!")
                 sendNotification('Order', 'Your order has been placed successfully!');
-                toast.dismiss();
-                toast.success('Order placed successfully');
-
                 // Add payment for both online and COD payment methods
                 fetch(`${apiUri}api/addPayment`, {
                     method: 'POST',
@@ -147,7 +146,6 @@ const Cart = () => {
                 }).then(paymentResponse => paymentResponse.json())
                     .then(paymentData => {
                         console.log('Payment added successfully:', paymentData);
-
                         if (paymentMethod === 'online') {
                             handleStripePayment(orderId); // Call function to initiate Stripe payment AFTER adding payment
                         } else {
@@ -213,7 +211,8 @@ const Cart = () => {
 
                 const addPaymentData = await addPaymentResponse.json();
                 console.log('Payment added successfully:', addPaymentData);
-                sendNotification('Order', 'Made Successful Payment!');
+                toast("Order Placed Successfully!")
+                sendNotification('Payment', 'Made Successful Payment!');
                 clearCart();
                 setOpenDialog(false);
             }
@@ -627,7 +626,7 @@ const Cart = () => {
 
                     </DialogActions>
                 </Dialog>
-                <ToastContainer />
+                <ToastContainer/>
             </div>
         </>
     );

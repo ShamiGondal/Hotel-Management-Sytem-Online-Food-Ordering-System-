@@ -154,7 +154,6 @@ const Navbar = () => {
     }, [isLoggedIn, imageUpdated]);
 
 
-
     const token = Cookies.get('token');
     useEffect(() => {
         if (token) {
@@ -211,7 +210,6 @@ const Navbar = () => {
     };
 
 
-
     useEffect(() => {
         const fetchAddresses = async () => {
             try {
@@ -247,17 +245,12 @@ const Navbar = () => {
     }, [isLoggedIn]);
 
 
-
     // Function to toggle notification box visibility
     const toggleNotification = () => {
         setShowNotification(prevState => !prevState);
     };
 
-    const markNotificationAsRead = (notificationId) => {
-        // Mark notification as read in frontend state
-        console.log(notificationId)
-        setUnreadNotifications(prevNotifications => prevNotifications.filter(notification => notification.notificationId !== notificationId));
-    };
+
     const playNotificationSound = () => {
         const audio = new Audio('../assets/audios/notifications-sound-127856.mp3');
         audio.play();
@@ -265,44 +258,85 @@ const Navbar = () => {
 
     // playNotificationSound();
     useEffect(() => {
-        const fetchCustomerNotifications = async () => {
+        const fetchNotifications = async () => {
             try {
-                const token = Cookies.get('token')
+                const token = Cookies.get('token');
+
+                // Fetch customer notifications
                 const response = await fetch(`${apiUri}api/notifications/customer`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `${token}`
                     }
                 });
-
                 if (!response.ok) {
                     throw new Error('Failed to fetch customer notifications');
                 }
+                const customerNotifications = await response.json();
 
-                const data = await response.json();
-                setNotifications(data);
+                // Fetch promotion notifications
+                const promotionResponse = await fetch(`${apiUri}api/notifications/promotions`, {
+                    method: 'GET',
+                });
+                if (!promotionResponse.ok) {
+                    throw new Error('Failed to fetch promotion notifications');
+                }
+                const promotionNotifications = await promotionResponse.json();
+
+                // Concatenate promotion notifications with customer notifications
+                const allNotifications = [...customerNotifications, ...promotionNotifications];
+                setNotifications(allNotifications.reverse());
+
                 // Filter unread notifications
-                const unread = data.filter(notification => !notification.read);
-                setUnreadNotifications(data.reverse());
+                const unread = allNotifications.filter(notification => notification.IsCustomerRead === 0);
+                setUnreadNotifications(unread);
                 if (unread.length > 0) {
                     playNotificationSound();
                 }
-
             } catch (error) {
-                console.error('Error fetching customer notifications:', error);
+                console.error('Error fetching notifications:', error);
             }
         };
 
-        // Call the function to fetch customer notifications
-        fetchCustomerNotifications();
+        // Call the function to fetch notifications
+        fetchNotifications();
 
         // Poll for new notifications every 30 seconds
-        const notificationPollingInterval = setInterval(fetchCustomerNotifications, 30000);
+        const notificationPollingInterval = setInterval(fetchNotifications, 3000);
 
         return () => clearInterval(notificationPollingInterval);
-
     }, [isLoggedIn]);
 
+
+    const markNotificationAsRead = async (notificationId) => {
+        try {
+            await fetch(`${apiUri}api/notifications/${notificationId}/read`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token
+                },
+                body: JSON.stringify({
+                    isCustomerRead: 1, // Set IsCustomerRead to 1 when notification is clicked
+                }),
+            });
+
+            // Update the local state to mark the notification as read
+            const updatedNotifications = notifications.map((notification) =>
+                notification.notification_id === notificationId
+                    ? { ...notification, IsCustomerRead: 1 }
+                    : notification
+            );
+            setNotifications(updatedNotifications);
+
+            // Remove the notification from unreadNotifications if it was there
+            setUnreadNotifications((prevNotifications) =>
+                prevNotifications.filter((id) => id !== notificationId)
+            );
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+        }
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -458,24 +492,40 @@ const Navbar = () => {
                             <button className="btn bg-bg-transparent  text-danger " onClick={toggleNotification}>
                                 <i className="fa-solid fa-bell"></i>
                             </button>
-                            {unreadNotifications.length > 0 && (
-                                <span className="badge bg-danger" style={{ position: 'absolute', top: '-10px', right: '-10px' }}>{unreadNotifications.length}</span>
+                            {unreadNotifications && (
+                                <span className="badge bg-danger" style={{ position: 'absolute', top: '-10px', right: '-10px' }}>
+                                    {unreadNotifications.length}
+                                </span>
                             )}
-                            {showNotification && ( // Render the notification box when showNotification is true
-                                <div ref={notificationRef} className={`notification-box rounded-2 border-warning shadow-lg bg-${isDarkMode ? "dark" : "light"}`} style={{
-                                    position: 'absolute', top: '100%', right: 0, width: '300px', maxHeight: '400px', overflowY: 'auto', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', zIndex: 999,
-                                }}>
-                                    {/* Notification content */}
+                            {showNotification && (
+                                <div
+                                    ref={notificationRef}
+                                    className={`notification-box rounded-2 border-warning shadow-lg bg-${isDarkMode ? 'dark' : 'light'}`}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '100%',
+                                        right: 0,
+                                        width: '300px',
+                                        maxHeight: '400px',
+                                        overflowY: 'auto',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                                        zIndex: 999,
+                                    }}
+                                >
                                     {notifications.map((notification, index) => (
                                         <div key={index}>
-                                            <div className={`p-4 fst-italic fw-light fs-6 text-${isDarkMode ? "light" : "dark"} `} onClick={() => markNotificationAsRead(notification.notification_id)} style={{ cursor: "pointer" }} >
+                                            <div
+                                                className={`p-4 fst-italic  fs-6 text-${isDarkMode ? 'light' : 'dark'} fw-${notification.IsCustomerRead === 0 ? 'bold' : 'light'}`}
+                                                onClick={() => markNotificationAsRead(notification.notification_id)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
                                                 <div className="d-flex justify-content-between ">
                                                     <p>{notification.message}</p>
                                                     <p className="text-danger fw-bold">{notification.type}</p>
                                                 </div>
                                                 <small>{new Date(notification.created_at).toLocaleString()}</small>
                                             </div>
-                                            {index !== notifications.length - 1 && <hr className=" notification-divider" />}
+                                            {index !== notifications.length - 1 && <hr className="notification-divider" />}
                                         </div>
                                     ))}
 

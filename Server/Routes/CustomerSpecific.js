@@ -98,7 +98,8 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
         const totalAmount = calculateTotalAmount(orderItems);
         
         const formattedAddress = `${deliveryAddress.StreetAddress}, ${deliveryAddress.City}, ${deliveryAddress.State}, ${deliveryAddress.PostalCode}, ${deliveryAddress.Country}`;
-        console.log(formattedAddress)
+        const formatedOrderNote = orderNote ? `${orderNote}` : 'No Instruction';
+        console.log("orderNOte",orderNote )
         
         // Insert order into Orders table
         const orderInsertQuery = `
@@ -106,10 +107,7 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         `;
 
-        // Check if orderNote is provided, otherwise use an empty string
-        const orderNoteValue = orderNote ? orderNote : '';
-
-        await pool.promise().query(orderInsertQuery, [orderId, customerID, currentDate, currentTime, paymentStatus, totalAmount, status, orderNoteValue, formattedAddress]);
+        await pool.promise().query(orderInsertQuery, [orderId, customerID, currentDate, currentTime, paymentStatus, totalAmount, status, formatedOrderNote, formattedAddress]);
 
         // Insert order items into OrderItems table
         for (const item of orderItems) {
@@ -143,6 +141,7 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
         res.status(500).json({ error: "An error occurred while placing the order." });
     }
 });
+
 
 
 Router.get('/my-recent-orders', fetchUser, async (req, res) => {

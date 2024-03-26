@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
 import './FoodLoader.css'
+import './Toast.css'
 import './ErrorPage.css'
 import Navbar from './Components/NavBar'
 import CustomerLogin from './Components/Authentication/CustomerLogin'

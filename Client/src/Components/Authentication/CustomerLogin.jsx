@@ -14,12 +14,12 @@ const CustomerLogin = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         if (!credentials.email || !credentials.password) {
             toast.error('Please fill in all fields');
             return;
         }
-    
+
         try {
             const response = await fetch(`${apiUri}api/Login`, {
                 method: 'POST',
@@ -28,20 +28,21 @@ const CustomerLogin = () => {
                 },
                 body: JSON.stringify({ email: credentials.email, password: credentials.password }),
             });
-    
+
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-    
+
             const data = await response.json();
-    
+
             if (response.ok) {
                 toast.success('Successfully Logged In!');
-                document.cookie = `token=${data.token};max-age=${60 * 60};path=/`;
+                document.cookie = `token=${data.token};path=/`;
                 setTimeout(() => {
                     navigate('/');
                 }, 1000);
-            } else {
+            }
+            else {
                 // Login failed, handle accordingly
                 toast.error('Invalid email or password');
             }
@@ -51,7 +52,7 @@ const CustomerLogin = () => {
             // Handle error, show error message, etc.
         }
     };
-    
+
 
     const onChange = (e) => {
         setCredentials({ ...credentials, [e.target.name]: e.target.value });

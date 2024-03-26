@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Form, Button, Container, Col } from 'react-bootstrap';
 import { useDarkMode } from '../Hooks/DarkModeContext';
 import Cookies from 'js-cookie';
+import sendNotification from '../helper/NotificationSender';
 function Complaints() {
 
     //TODO : Have to beautify the complaint Page 
@@ -42,6 +43,7 @@ function Complaints() {
             });
             if (response.ok) {
                 console.log('Complaint posted successfully');
+                sendNotification('Complaint', 'Your Complaint in pending..');
                 setComplaintType('');
                 setComplaintText('');
             } else {

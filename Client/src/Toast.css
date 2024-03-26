@@ -1,0 +1,31 @@
+.toast {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    border-radius: 5px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    z-index: 9999; /* Ensure the toast is displayed above other elements */
+    width: 100%; /* Make the toast span the entire width */
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: auto;
+  }
+  
+  .toast.error {
+    background-color: #ff6347; /* Lightcoral */
+  }
+  
+  .toast.success {
+    background-color: #32cd32; /* Limegreen */
+  }

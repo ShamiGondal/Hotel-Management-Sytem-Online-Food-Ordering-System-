@@ -49,7 +49,7 @@ CREATE TABLE Orders (
     CustomerID INT,
     OrderDate DATE,
     OrderTime TIME, -- Added Time Attribute
-    OrderNote VARCHAR(100) DEFAULT NULL,
+    OrderNote VARCHAR(100) DEFAULT'No Instruction',
     PaymentStatus VARCHAR(50) CHECK (PaymentStatus IN ('Pending', 'Confirmed', 'Rejected')),
     TotalAmount DECIMAL(10, 2),
     DeliveryAddress VARCHAR(255),
@@ -143,19 +143,24 @@ CREATE TABLE Complaints (
 -- Table for notifications
 CREATE TABLE notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
-    type ENUM('order', 'complaint', 'reservation') NOT NULL,
+    type ENUM('order', 'complaint', 'reservation','payment') NOT NULL,
     message TEXT NOT NULL,
     CustomerID INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsCustomerRead TINYINT DEFAULT 0,
+    IsAdminRead TINYINT DEFAULT 0,
     FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID)
 );
+
 
 -- Table for promotion notifications
 CREATE TABLE promotion_notifications (
     notification_id INT AUTO_INCREMENT PRIMARY KEY,
     type ENUM('generic', 'promotion') NOT NULL,
     message TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    IsCustomerRead TINYINT DEFAULT 0,
+    IsAdminRead TINYINT DEFAULT 0
 );
 
 

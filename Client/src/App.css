@@ -380,3 +380,8 @@ body::-webkit-scrollbar-track {
   background-color: pink; /* Set the color of the track */
   border-radius: 5px; /* Set the border radius to make it rounded */
 }
+
+/* Add this CSS to your stylesheet */
+.notification-unread {
+  background-color: #ffe6e6; /* Light red background for unread notifications */
+}

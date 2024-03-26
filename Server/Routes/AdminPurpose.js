@@ -425,6 +425,26 @@ Router.post('/notifications/promotions', async (req, res) => {
     }
 });
 
+// Update notification read status for customer and admin
+Router.put('/notifications/:id/read',  async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(id)
+        const { isCustomerRead = 0, isAdminRead = 0 } = req.body;
+        // Update notifications table
+        await pool.promise().query('UPDATE notifications SET IsCustomerRead = ?, IsAdminRead = ? WHERE notification_id = ?', [isCustomerRead, isAdminRead, id]);
+
+        // Update promotion_notifications table if the notification exists there
+        await pool.promise().query('UPDATE promotion_notifications SET IsCustomerRead = ?, IsAdminRead = ? WHERE notification_id = ?', [isCustomerRead, isAdminRead, id]);
+
+        res.status(200).json({ message: 'Notification read status updated successfully' });
+    } catch (error) {
+        console.error("Error updating notification read status:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
+
 
 
 module.exports = Router;
