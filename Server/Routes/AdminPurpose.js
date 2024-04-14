@@ -89,6 +89,69 @@ Router.post('/addFoodItems', upload.array('images'), async (req, res) => {
     }
 });
 
+Router.post('/editFoodItem/:foodItemId', upload.array('images'), async (req, res) => {
+    try {
+        const foodItemId = req.params.foodItemId;
+
+        // Extract fields from the request body
+        const { title, subtitle, description, price, sizesAndPrices, selectionsAndPrices, isAvailable, foodItemDiscount, category } = req.body;
+
+        // Check for missing fields
+        if (!title || !subtitle || !description || !price || !sizesAndPrices || !selectionsAndPrices || isAvailable === undefined || isAvailable === null || !foodItemDiscount || !category) {
+            return res.status(400).json({ error: "All fields are required." });
+        }
+
+        // Validate price
+        if (isNaN(price) || price <= 0) {
+            return res.status(400).json({ error: "Price must be a valid number greater than zero." });
+        }
+
+        // Upload images to Cloudinary
+        const imageUrls = [];
+        for (const file of req.files) {
+            const result = await cloudinary.uploader.upload(file.path, { folder: 'FoodItems' });
+            imageUrls.push(result.secure_url);
+        }
+
+        // Convert array of image URLs to JSON string
+        const imageURLString = JSON.stringify(imageUrls);
+
+        // Convert sizes and specialSelections to JSON strings
+        const sizesString = JSON.stringify(sizesAndPrices);
+        const specialSelectionString = JSON.stringify(selectionsAndPrices);
+
+        const isAvailableValue = isAvailable === 'on' ? 1 : 0;
+
+        // Update the food item in the database
+        const foodItemQuery = 'UPDATE FoodItems SET Title = ?, Subtitle = ?, Description = ?, Price = ?, Sizes = ?, SpecialSelection = ?, IsAvailable = ?, FoodItemDiscount = ?, Category = ?, ImageURL = ? WHERE id = ?';
+        pool.query(foodItemQuery, [title, subtitle, description, price, sizesString, specialSelectionString, isAvailableValue, foodItemDiscount, category, imageURLString, foodItemId], (error, results) => {
+            if (error) {
+                console.error("Error updating food item:", error);
+                return res.status(500).json({ error: "An error occurred while updating the food item." });
+            } else {
+                res.status(200).json({
+                    message: "Successfully Updated the FoodItem",
+                    FoodItem: {
+                        Title: title,
+                        Subtitle: subtitle,
+                        Description: description,
+                        Price: price,
+                        Sizes: sizesString,
+                        SpecialSelection: specialSelectionString,
+                        IsAvailable: isAvailableValue,
+                        FoodItemDiscount: foodItemDiscount,
+                        Category: category,
+                        ImageURL: imageURLString
+                    }
+                });
+            }
+        });
+    } catch (error) {
+        console.error("Error updating food item:", error);
+        return res.status(500).json({ error: "An error occurred while updating the food item." });
+    }
+});
+
 
 
 Router.post('/addAddon', upload.single('image'), async (req, res) => {
@@ -243,23 +306,141 @@ Router.get('/getFoodItems', (req, res) => {
 });
 
 // Endpoint to fetch orders
+// Endpoint to fetch orders
 Router.get('/getOrders', async (req, res) => {
     try {
-        const orderquery = 'SELECT * FROM Orders';
-        pool.query(orderquery, (error, results) => {
+        const orderQuery = `
+            SELECT 
+                o.*,
+                oi.OrderItemID,
+                f.Title AS FoodItemTitle,
+                a.Title AS AddonTitle
+            FROM 
+                Orders o
+            JOIN 
+                OrderItems oi ON o.OrderID = oi.OrderID
+            LEFT JOIN 
+                FoodItems f ON oi.FoodItemID = f.FoodItemID
+            LEFT JOIN 
+                Addons a ON oi.AddonID = a.AddonID
+        `;
+        
+        pool.query(orderQuery, (error, results) => {
             if (error) {
-                console.error("Error fetching food items:", error);
-                return res.status(500).json({ error: "An error occurred while fetching food items." });
+                console.error("Error fetching orders:", error);
+                return res.status(500).json({ error: "An error occurred while fetching orders." });
             }
             res.status(200).json(results);
         });
-
-
     } catch (error) {
         console.error("Error fetching orders:", error);
         res.status(500).json({ error: "An error occurred while fetching orders." });
     }
 });
+
+// Endpoint to get number of pending orders, pending reservations, and unresolved complaints
+Router.get('/pendingReservation', (req, res) => {
+    try {
+        // Count pending orders
+        const pendingReservationsQuery = 'SELECT COUNT(*) AS PendingReservations FROM Reservations WHERE Status = \'Pending\'';
+        pool.query(pendingReservationsQuery, (error, pendingReservationsQuery) => {
+            if (error) {
+                console.error("Error fetching pending orders count:", error);
+                return res.status(500).json({ error: "An error occurred while fetching pending orders count." });
+            }
+            
+            
+
+            // Return pending orders count as JSON response
+            res.status(200).json({ pendingReservationsQuery });
+        });
+    } catch (error) {
+        console.error("Error fetching pending orders count:", error);
+        res.status(500).json({ error: "An error occurred while fetching pending orders count." });
+    }
+});
+
+
+// Endpoint to fetch number of pending reservations
+Router.get('/pendingOrders', (req, res) => {
+    try {
+        // Count pending reservations
+        const pendingReservationsQuery = 'SELECT COUNT(*) AS PendingOrders FROM Orders WHERE Status = \'Pending\'';
+;
+
+
+        pool.query(pendingReservationsQuery, (error, pendingReservationsResult) => {
+            if (error) {
+                console.error("Error fetching pending reservations count:", error);
+                return res.status(500).json({ error: "An error occurred while fetching pending reservations count." });
+            }
+            
+            
+
+            // Return pending reservations count as JSON response
+            res.status(200).json({ pendingReservationsResult });
+        });
+    } catch (error) {
+        console.error("Error fetching pending reservations count:", error);
+        res.status(500).json({ error: "An error occurred while fetching pending reservations count." });
+    }
+});
+
+// Endpoint to fetch number of unresolved complaints
+Router.get('/unresolvedComplaints', (req, res) => {
+    try {
+        // Count unresolved complaints
+        const unresolvedComplaintsQuery = 'SELECT COUNT(*) AS UnresolvedComplaints FROM Complaints WHERE IsResolved = 0';
+        pool.query(unresolvedComplaintsQuery, (error, unresolvedComplaintsResult) => {
+            if (error) {
+                console.error("Error fetching unresolved complaints count:", error);
+                return res.status(500).json({ error: "An error occurred while fetching unresolved complaints count." });
+            }
+            
+           
+
+            // Return unresolved complaints count as JSON response
+            res.status(200).json({ unresolvedComplaintsResult });
+        });
+    } catch (error) {
+        console.error("Error fetching unresolved complaints count:", error);
+        res.status(500).json({ error: "An error occurred while fetching unresolved complaints count." });
+    }
+});
+
+
+
+Router.get('/getOrderItems', async (req, res) => {
+    try {
+        const query = `
+            SELECT
+                oi.OrderItemID,
+                oi.OrderID,
+                oi.Quantity,
+                oi.Subtotal,
+                f.Title AS FoodItemTitle,
+                a.Title AS AddonTitle
+            FROM
+                OrderItems oi
+            JOIN
+                FoodItems f ON oi.FoodItemID = f.FoodItemID
+            LEFT JOIN
+                Addons a ON oi.AddonID = a.AddonID
+        `;
+        
+        pool.query(query, (error, results) => {
+            if (error) {
+                console.error("Error fetching order items:", error);
+                return res.status(500).json({ error: "An error occurred while fetching order items." });
+            }
+            res.status(200).json(results);
+        });
+    } catch (error) {
+        console.error("Error fetching order items:", error);
+        res.status(500).json({ error: "An error occurred while fetching order items." });
+    }
+});
+
 
 
 // Endpoint to fetch reservations
@@ -313,13 +494,33 @@ Router.get('/getComplaints', async (req, res) => {
             }
             res.status(200).json(results);
         });
-        res.status(200).json(complaints);
+       
     } catch (error) {
         console.error('Error fetching complaints:', error);
         res.status(500).json({ error: 'An error occurred while fetching complaints.' });
     }
 });
 
+// update complaint status
+Router.put('/updateComplaintStatus/:complaintId', async (req, res) => {
+    try {
+        const { complaintId } = req.params;
+        const { isResolved } = req.body;
+
+        // Update the complaint status in the database
+        const query = 'UPDATE Complaints SET IsResolved = ? WHERE ComplaintID = ?';
+        pool.query(query, [isResolved, complaintId], (error, results) => {
+            if (error) {
+                console.error('Error updating complaint status:', error);
+                return res.status(500).json({ error: 'An error occurred while updating complaint status.' });
+            }
+            res.status(200).json({ message: 'Complaint status updated successfully.' });
+        });
+    } catch (error) {
+        console.error('Error updating complaint status:', error);
+        return res.status(500).json({ error: 'An error occurred while updating complaint status.' });
+    }
+});
 
 //EndPoint to fetch all payments
 
