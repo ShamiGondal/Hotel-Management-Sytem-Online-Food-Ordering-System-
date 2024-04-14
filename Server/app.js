@@ -6,10 +6,11 @@ const AdminPurpose = require('./Routes/AdminPurpose');
 const SpecifiCustomer = require('./Routes/CustomerSpecific');
 const DBquerry = require('./Routes/DBQuerries');
 const cookieParser = require('cookie-parser');
+require('dotenv').config();
 
 const app = express();  
 
-const PORT = process.env.PORT || 4000;  
+const PORT = process.env.PORT || 3000;  
 
 app.use(express.json());
 app.use(cors());

@@ -3,35 +3,6 @@ const { mssql, pool, sql } = require('../db/db');
 const fetchUser = require('../middlewares/fetchCustomer');
 const Router = express.Router();
 
-// Endpoint to update reservation status
-// Router.put('/updateReservationStatus/:reservationID', async (req, res) => {
-//     const { reservationID } = req.params;
-//     const { newStatus } = req.body;
-
-//     // Check if reservationID is provided
-//     if (!reservationID) {
-//         return res.status(400).json({ error: "Reservation ID is required." });
-//     }
-
-//     // Check if newStatus is provided
-//     if (!newStatus) {
-//         return res.status(400).json({ error: "New status is required." });
-//     }
-
-//     try {
-//         // Call the UpdateReservationStatus stored procedure
-//         const procedure = await pool.request()
-//             .input('ReservationID', mssql.Int, reservationID)
-//             .input('NewStatus', mssql.VarChar(50), newStatus)
-//             .execute('UpdateReservationStatus');
-
-//         res.status(200).json({ message: "Reservation status updated successfully." });
-//     } catch (error) {
-//         console.error("Error updating reservation status:", error);
-//         res.status(500).json({ error: "An error occurred while updating reservation status." });
-//     }
-// });
-// Endpoint to update reservation status by ID
 Router.put('/updateReservationStatus/:id', (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -139,43 +110,6 @@ Router.put('/updateOrderStatus/:orderID', async (req, res) => {
     }
   });
 
-// Endpoint to update complaint status
-// Router.put('/updateComplaintStatus/:complaintID', async (req, res) => {
-//     const { complaintID } = req.params;
-//     const { isResolved } = req.body;
-  
-//     try {
-//       // Check if complaintID is a valid integer
-//       if (!Number.isInteger(parseInt(complaintID))) {
-//         return res.status(400).json({ error: "Invalid complaintID format." });
-//       }
-  
-//       // Check if isResolved is provided and is a valid boolean
-//       if (typeof isResolved !== 'boolean') {
-//         return res.status(400).json({ error: "Invalid isResolved value." });
-//       }
-  
-//       // Perform the update in the database
-//       const query = `
-//         UPDATE Complaints
-//         SET IsResolved = ?
-//         WHERE ComplaintID = ?;
-//       `;
-//       pool.query(query, [isResolved, complaintID], (error, results) => {
-//         if (error) {
-//           console.error("Error updating complaint status:", error);
-//           res.status(500).json({ error: "An error occurred while updating complaint status." });
-//         } else {
-//           res.status(200).json({ message: "Complaint status updated successfully." });
-//         }
-//       });
-//     } catch (error) {
-//       console.error("Error updating complaint status:", error);
-//       res.status(500).json({ error: "An error occurred while updating complaint status." });
-//     }
-//   });
-
-//Endpoint to update PaymentStatus in Order
 
 Router.put('/updatePaymentStatus/:orderID', async (req, res) => {
     const { orderID } = req.params;

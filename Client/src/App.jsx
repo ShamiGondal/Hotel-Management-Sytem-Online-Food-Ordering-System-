@@ -1,23 +1,27 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
+import './FoodLoader.css'
+import './Toast.css'
+import './ErrorPage.css'
 import Navbar from './Components/NavBar'
-import CustomerLogin from './Components/CustomerLogin'
-import CustomerSignup from './Components/CustomerSignup'
-import Reservations from './Components/Reservations'
-import Feedback from './Components/Feedback'
-import Complaints from './Components/Complaints'
-import DisplayingFoodItems from './Components/DisplayingFoodItems'
+import CustomerLogin from './Components/Authentication/CustomerLogin'
+import CustomerSignup from './Components/Authentication/CustomerSignup'
+import Reservations from './Components/Drawer/Reservations'
+import Feedback from './Components/Drawer/Feedback'
+import Complaints from './Components/Drawer/Complaints'
+import DisplayingFoodItems from './Components/MainUI/DisplayingFoodItems'
 import { DarkModeProvider } from './Components/Hooks/DarkModeContext'
-import TrackOrder from './Components/TrackOrder'
-import StoreLocator from './Components/StoreLocator'
-import PrivacyPolicy from './Components/PrivacyPolicy'
-import Cart from './Components/Cart'
-import FoodMenu from './Components/FoodMenu'
-import Home from './Components/Home'
+import TrackOrder from './Components/Drawer/TrackOrder'
+import StoreLocator from './Components/Drawer/StoreLocator'
+import PrivacyPolicy from './Components/Drawer/PrivacyPolicy'
+import Cart from './Components/MainUI/Cart'
+import FoodMenu from './Components/MainUI/FoodMenu'
+import Home from './Components/DashBoard/Home'
 import { CartProvider } from './Components/Hooks/useCart'
-import PaymentForm from './Components/PaymentForm'
-import FoodItemDetails from './Components/FoodItemDetails'
-import ErrorPage from './Components/ErrorPage'
+import PaymentForm from './Components/MainUI/PaymentForm'
+import FoodItemDetails from './Components/MainUI/FoodItemDetails'
+import ErrorPage from './Components/ErrorHandlings/ErrorPage'
+
 
 
 function App() {
@@ -44,9 +48,8 @@ function App() {
                 <Route path="/FoodMenu" element={<FoodMenu />} />
                 <Route path="/Payment" element={<PaymentForm />} />
                 <Route path="/FoodItemDetails/:id" element={<FoodItemDetails />} />
-                {/* Error route (should be at the end) */}
               </Route>
-              <Route component={ErrorPage} />
+              <Route path="*" element={<ErrorPage />} />
             </Routes>
 
           </DarkModeProvider>

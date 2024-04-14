@@ -243,47 +243,6 @@
   padding: 40px;
 }
 
-@media (min-width: 768px ) {
-
-  .sidebar {
-    
-    margin-top: 70px;
-   
-  }
-  
-}
-
-
-@media (max-width: 840px) {
-  .sidebar {
-    height: auto;
-    background-color: white;
-    overflow: visible;
-    padding-bottom: 5px;
-  }
-
-  .toggle-btn {
-    display: block;
-    margin: 0 auto; /* Center the button horizontally */
-    text-align: center;
-    color: #fff;
-
-  }
-
-  .content {
-    padding-top: 20px; /* Add padding to content to accommodate the sidebar */
-  }
-
-  .sidebar.closed {
-    height: 100px;
-    margin-top: -10px;
-    overflow: hidden;
-  }
-}
-
-
-
-
 /*footer li hover efffect*/
 
 .list-unstyled li a:hover {
@@ -420,4 +379,9 @@ body::-webkit-scrollbar-thumb {
 body::-webkit-scrollbar-track {
   background-color: pink; /* Set the color of the track */
   border-radius: 5px; /* Set the border radius to make it rounded */
+}
+
+/* Add this CSS to your stylesheet */
+.notification-unread {
+  background-color: #ffe6e6; /* Light red background for unread notifications */
 }

@@ -3,6 +3,8 @@ const { mssql, pool, sql } = require('../db/db');
 const fetchUser = require('../middlewares/fetchCustomer');
 const multer = require('multer');
 const Router = express.Router();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+require('dotenv').config();
 
 
 const storage = multer.memoryStorage();
@@ -36,10 +38,6 @@ Router.post('/uploadImage', upload.single('image'), fetchUser, async (req, res) 
 });
 
 
-
-
-
-
 // Endpoint for inserting addresses
 Router.post('/addAddress', fetchUser, async (req, res) => {
     const { streetAddress, city, state, postalCode, country } = req.body;
@@ -62,18 +60,14 @@ Router.post('/addAddress', fetchUser, async (req, res) => {
 });
 
 
-
-
 // Define the calculateTotalAmount function
 const calculateTotalAmount = (orderItems) => {
     let totalAmount = 0;
     orderItems.forEach((item) => {
-        console.log("Item:", item);
         totalAmount += item.quantity * item.subtotal;
     });
     return totalAmount;
 };
-
 
 // Endpoint for placing orders
 
@@ -82,38 +76,38 @@ function generateOrderItemId() {
 }
 
 Router.post('/placeOrder', fetchUser, async (req, res) => {
-    const { orderId, orderItems, paymentStatus, status, orderNote } = req.body;
+    const { orderId, orderItems, paymentStatus, status, orderNote, deliveryAddress } = req.body;
     const customerID = req.user;
-    console.log(orderNote)
 
     try {
         // Check if all required fields are provided
         if (!orderId || !orderItems || !paymentStatus || !status) {
             return res.status(400).json({ error: "Missing required fields in the request body." });
         }
-
+        
         // Check if orderItems is an array and is not empty
         if (!Array.isArray(orderItems) || orderItems.length === 0) {
             return res.status(400).json({ error: "Invalid orderItems data." });
         }
-
+        
         // Get current date and time
         const currentDate = new Date().toISOString().slice(0, 10); // Format: YYYY-MM-DD
         const currentTime = new Date().toLocaleTimeString('en-US', { hour12: false }); // Format: HH:MM:SS
-
+        
         // Calculate total amount
         const totalAmount = calculateTotalAmount(orderItems);
-
+        
+        const formattedAddress = `${deliveryAddress.StreetAddress}, ${deliveryAddress.City}, ${deliveryAddress.State}, ${deliveryAddress.PostalCode}, ${deliveryAddress.Country}`;
+        const formatedOrderNote = orderNote ? `${orderNote}` : 'No Instruction';
+        console.log("orderNOte",orderNote )
+        
         // Insert order into Orders table
         const orderInsertQuery = `
-            INSERT INTO Orders (OrderID, CustomerID, OrderDate, OrderTime, PaymentStatus, TotalAmount, Status, OrderNote)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            INSERT INTO Orders (OrderID, CustomerID, OrderDate, OrderTime, PaymentStatus, TotalAmount, Status, OrderNote, DeliveryAddress)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
         `;
 
-        // Check if orderNote is provided, otherwise use an empty string
-        const orderNoteValue = orderNote ? orderNote : '';
-
-        await pool.promise().query(orderInsertQuery, [orderId, customerID, currentDate, currentTime, paymentStatus, totalAmount, status, orderNoteValue]);
+        await pool.promise().query(orderInsertQuery, [orderId, customerID, currentDate, currentTime, paymentStatus, totalAmount, status, formatedOrderNote, formattedAddress]);
 
         // Insert order items into OrderItems table
         for (const item of orderItems) {
@@ -150,8 +144,6 @@ Router.post('/placeOrder', fetchUser, async (req, res) => {
 
 
 
-
-
 Router.get('/my-recent-orders', fetchUser, async (req, res) => {
     const customerID = req.user;
 
@@ -174,7 +166,6 @@ Router.get('/my-recent-orders', fetchUser, async (req, res) => {
         res.status(500).json({ error: "An error occurred while fetching recent orders." });
     }
 });
-
 
 
 // POST request to add a review
@@ -203,7 +194,6 @@ Router.post('/my-Review', fetchUser, async (req, res) => {
 Router.get('/customerReviews/:foodItemId', async (req, res) => {
     try {
         const { foodItemId } = req.params;
-        console.log(foodItemId)
         const query = `
             SELECT 
                 FoodItemsReview.Rating, 
@@ -401,6 +391,39 @@ Router.get('/getFoodItems/:id', (req, res) => {
     });
 });
 
+Router.get('/getOrder/:orderId', fetchUser, async (req, res) => {
+    const { orderId } = req.params;
+    const customerID = req.user;
+
+    try {
+        // Fetch the order details
+        const getOrderQuery = `
+            SELECT * FROM Orders WHERE OrderID = ? AND CustomerID = ?;
+        `;
+        const [orderDetails] = await pool.promise().query(getOrderQuery, [orderId, customerID]);
+
+        if (!orderDetails || orderDetails.length === 0) {
+            return res.status(404).json({ error: "Order not found." });
+        }
+
+        // Fetch the order items for the order
+        const getOrderItemsQuery = `
+            SELECT * FROM OrderItems WHERE OrderID = ?;
+        `;
+        const [orderItems] = await pool.promise().query(getOrderItemsQuery, [orderId]);
+
+        const order = {
+            ...orderDetails[0],
+            orderItems
+        };
+
+        res.status(200).json({ order });
+    } catch (error) {
+        console.error("Error fetching order:", error);
+        res.status(500).json({ error: "An error occurred while fetching the order." });
+    }
+});
+
 // Endpoint to fetch customer's addresses
 Router.get('/my-addresses', fetchUser, (req, res) => {
     const userID = req.user;
@@ -546,22 +569,17 @@ Router.get('/my-payments', fetchUser, (req, res) => {
     });
 });
 
-
-const stripe = require('stripe')('sk_test_51OINxgHgDxyW6XeqXdvsjgWOyp1oKvTDcbcliYmQFFhOxq1UGqePKlnzHKcG6vT0XWzzU6S6Q9rKORczTys6WbFw00OsaMM5I7');
-
 // Route for creating a session
 Router.post('/payment-session', async (req, res) => {
     const { items, totalAmount } = req.body;
-    console.log(totalAmount)
 
     try {
         const totalAmountCents = Math.round(parseFloat(totalAmount) * 100);
-        console.log(totalAmountCents)
         const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
         const lineItems = items.map(item => {
             const unitAmount = Math.round((totalAmountCents * item.quantity) / totalQuantity);
             if (isNaN(unitAmount) || unitAmount <= 0) {
-                console.log(unitAmount ,'hello')
+                console.log(unitAmount, 'hello')
                 throw new Error(`Invalid unit amount for item '${item.name}'`);
             }
             return {
@@ -580,8 +598,8 @@ Router.post('/payment-session', async (req, res) => {
             payment_method_types: ['card'],
             line_items: lineItems,
             mode: 'payment',
-            success_url: 'http://localhost:5173/',
-            cancel_url: 'http://localhost:5173/Cart',
+            success_url: process.env.SUCCESS_URL,
+            cancel_url:  process.env.CANCEL_URL,
         });
 
         res.json({ sessionId: session.id });

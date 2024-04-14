@@ -1,0 +1,49 @@
+/* Custom CSS for ErrorPage */
+.error-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f8f9fa; /* Light background color */
+    color: #212529; /* Dark text color */
+    position: relative; /* Position relative for absolute positioning of the robot icon */
+}
+
+.error-message {
+    text-align: center;
+    margin-bottom: 20px;
+    position: relative; /* Position relative for z-index */
+    z-index: 1; /* Set z-index to keep text above the robot icon */
+    background-color: rgba(255, 255, 255, 0.8); /* Semi-transparent white background for better readability */
+    padding: 20px; /* Add some padding for spacing */
+}
+
+.error-message h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.error-message p {
+    font-size: 1rem;
+}
+
+.robot-icon {
+    position: absolute;
+    top: 40%; /* Position at the vertical center */
+    left: 50%; /* Position at the horizontal center */
+    transform: translate(-50%, -50%); /* Center the icon */
+    width: 500px; /* Adjust size as needed */
+    height: 500px; /* Adjust size as needed */
+    z-index: 0; /* Set z-index behind the text */
+}
+
+/* Styles for the Link */
+.Link {
+    color: #007bff; /* Link color */
+    text-decoration: none;
+}
+
+.Link:hover {
+    text-decoration: underline; /* Underline on hover */
+}

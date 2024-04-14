@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const jwtKey = 'yourSecretKey';
+const jwtKey = process.env.SECRET_KEY;
 
 const fetchUser = (req, res, next) => {
     const token = req.headers['authorization'];
-    console.log(token)
+    console.log("token:", token)
     if (!token) {
         return res.status(401).json({ error: 'Authentication failed: Token not found' });
     }
