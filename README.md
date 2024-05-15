@@ -86,7 +86,7 @@ nodemon ./app.js
 
 ## Cover Image
 
-![Repository Cover Image](image-1.png)
+![Repository Cover Image](image.png)
 
 ## EndPoints to use
 
