@@ -23,7 +23,7 @@ Schema is avaliable at this path
 ## How to its working
 
 1. I just created the datbase design in the ms sql server.
-2. Then hosted it on the AWS (I will make video over it if you want)
+2. Then hosted it on the Avien (I will make video over it if you want)
 3. Then just made the connection with the credentials.
 4. Then there is also agent working for report after 24 hours
 4. Thats all  folks!
